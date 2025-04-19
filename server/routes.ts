@@ -6,27 +6,14 @@ import {
   insertEventSchema, 
   insertHealthMetricSchema, 
   insertTransactionSchema, 
-  insertRecommendationSchema 
+  insertRecommendationSchema,
+  insertUserSchema 
 } from "@shared/schema";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication placeholder - in a real app this would be more robust
-  app.post("/api/auth/login", async (req, res) => {
-    const { username, password } = req.body;
-    
-    if (!username || !password) {
-      return res.status(400).json({ message: "Username and password are required" });
-    }
-    
-    const user = await storage.getUserByUsername(username);
-    
-    if (!user || user.password !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-    
-    // In a real app, you would use sessions or JWT
-    res.json({ id: user.id, username: user.username, displayName: user.displayName });
-  });
+  // Set up authentication system
+  setupAuth(app);
   
   // User endpoint to get user by ID
   app.get("/api/users/:userId", async (req, res) => {
@@ -43,6 +30,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Don't return the password in the response
     const { password, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
+  });
+  
+  // Update user profile picture
+  app.put("/api/users/:userId/profile", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    
+    const { profilePicture } = req.body;
+    if (!profilePicture) {
+      return res.status(400).json({ message: "Profile picture is required" });
+    }
+    
+    try {
+      const updatedUser = await storage.updateUserProfile(userId, { profilePicture });
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't return the password in the response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update profile picture" });
+    }
   });
 
   // Dashboard endpoints

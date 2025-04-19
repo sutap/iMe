@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name"),
   email: text("email"),
+  profilePicture: text("profile_picture"), // Added profile picture field
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -17,6 +18,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   displayName: true,
   email: true,
+  profilePicture: true,
 });
 
 // Define relations after all models are defined

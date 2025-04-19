@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import createMemoryStore from "memorystore";
 
 declare global {
   namespace Express {
@@ -13,6 +14,7 @@ declare global {
   }
 }
 
+const MemoryStore = createMemoryStore(session);
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
@@ -29,28 +31,26 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Use a random session secret
-  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
+  // Set up session
+  const sessionSecret = process.env.SESSION_SECRET || "iMe-secret-key-change-in-production";
   
-  const sessionSettings: session.SessionOptions = {
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    }
-  };
-
-  // Initialize memory store for development
+  // Initialize the memory store if it doesn't exist yet
   if (!storage.sessionStore) {
-    const MemoryStore = require('memorystore')(session);
     storage.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
   }
   
-  sessionSettings.store = storage.sessionStore;
+  const sessionSettings: session.SessionOptions = {
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    store: storage.sessionStore,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      secure: process.env.NODE_ENV === "production"
+    }
+  };
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
@@ -62,7 +62,7 @@ export function setupAuth(app: Express) {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Invalid username or password" });
+          return done(null, false);
         } else {
           return done(null, user);
         }
@@ -72,7 +72,9 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
   
   passport.deserializeUser(async (id: number, done) => {
     try {
@@ -83,91 +85,97 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Register route for user registration
   app.post("/api/register", async (req, res, next) => {
     try {
-      // Check if user already exists
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      // Create new user with hashed password
+      const hashedPassword = await hashPassword(req.body.password);
       const user = await storage.createUser({
         ...req.body,
-        password: await hashPassword(req.body.password),
-        profilePicture: req.body.profilePicture || null,
+        password: hashedPassword,
       });
 
-      // Remove password before sending back to client
-      const userResponse = { ...user };
-      delete userResponse.password;
-
-      // Log user in
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(userResponse);
+        // Don't return the password in the response
+        const { password, ...userWithoutPassword } = user;
+        res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
       next(error);
     }
   });
 
+  // Login route
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
-      if (!user) return res.status(401).json({ message: info?.message || "Invalid credentials" });
-      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
       req.login(user, (err) => {
         if (err) return next(err);
-        
-        // Remove password before sending back to client
-        const userResponse = { ...user };
-        delete userResponse.password;
-        
-        res.status(200).json(userResponse);
+        // Don't return the password in the response
+        const { password, ...userWithoutPassword } = user;
+        res.json(userWithoutPassword);
       });
     })(req, res, next);
   });
 
+  // Logout route
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      res.status(200).json({ message: "Logged out successfully" });
     });
   });
 
+  // Route to get the current logged-in user
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
-    
-    // Remove password before sending back to client
-    const userResponse = { ...req.user };
-    delete userResponse.password;
-    
-    res.json(userResponse);
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    // Don't return the password in the response
+    const { password, ...userWithoutPassword } = req.user as SelectUser;
+    res.json(userWithoutPassword);
   });
 
-  // Profile picture upload endpoint
-  app.post("/api/profile/upload", async (req, res, next) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+  // Middleware to check if user is authenticated
+  app.use("/api/protected", (req, res, next) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.status(401).json({ message: "Authentication required" });
+  });
+
+  // Profile picture update endpoint
+  app.post("/api/profile/picture", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const { profilePicture } = req.body;
+    if (!profilePicture) {
+      return res.status(400).json({ message: "Profile picture is required" });
+    }
     
     try {
-      // The base64 profile picture will be in the request body
-      const { profilePicture } = req.body;
+      const userId = (req.user as SelectUser).id;
+      const updatedUser = await storage.updateUserProfile(userId, { profilePicture });
       
-      if (!profilePicture) {
-        return res.status(400).json({ message: "No profile picture provided" });
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
       }
       
-      // Update the user's profile picture
-      const updatedUser = await storage.updateUserProfile(req.user.id, { profilePicture });
-      
-      // Remove password before sending back to client
-      const userResponse = { ...updatedUser };
-      delete userResponse.password;
-      
-      res.status(200).json(userResponse);
+      // Don't return the password in the response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
     } catch (error) {
-      next(error);
+      res.status(500).json({ message: "Failed to update profile picture" });
     }
   });
 }
