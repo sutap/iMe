@@ -3,23 +3,68 @@ import Sidebar from "@/components/ui/sidebar";
 import MobileNav from "@/components/mobile-nav";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useUser } from "@/hooks/use-user";
+import { useAuth } from "@/hooks/use-auth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 function MobileUserInfo() {
-  const { currentUser, isLoading } = useUser();
+  const { user, isLoading, logoutMutation } = useAuth();
   
   if (isLoading) {
     return null; // Don't show anything while loading on mobile
   }
   
+  const initials = user?.displayName 
+    ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase() 
+    : user?.username?.[0]?.toUpperCase() || 'U';
+  
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+  
   return (
-    <span className="text-sm font-medium text-gray-900">
-      {currentUser?.displayName?.split(' ')[0] || "User"}
-    </span>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div className="flex items-center cursor-pointer">
+          <Avatar className="h-8 w-8 border border-gray-200">
+            <AvatarImage src={user?.profilePicture || ''} alt={user?.displayName || user?.username} />
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          <span className="ml-2 text-sm font-medium text-gray-900">
+            {user?.displayName?.split(' ')[0] || user?.username || "User"}
+          </span>
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          className="text-red-600 cursor-pointer"
+          onClick={handleLogout}
+          disabled={logoutMutation.isPending}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>{logoutMutation.isPending ? 'Logging out...' : 'Logout'}</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -84,22 +129,6 @@ export default function Layout({ children }: LayoutProps) {
                     />
                   </svg>
                 </button>
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-gray-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
                 <MobileUserInfo />
               </div>
             </div>

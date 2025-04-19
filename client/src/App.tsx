@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout";
 import Dashboard from "@/pages/dashboard";
@@ -9,49 +10,48 @@ import Schedule from "@/pages/schedule";
 import Health from "@/pages/health";
 import Finance from "@/pages/finance";
 import Discovery from "@/pages/discovery";
-import { useState, useEffect } from "react";
-import { UserProvider, useUser } from "@/hooks/use-user";
+import AuthPage from "@/pages/auth-page";
+import { ProtectedRoute } from "@/lib/protected-route";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 function Router() {
-  const { currentUser, isLoading } = useUser();
-  // Fall back to userId 1 if not loaded yet
-  const userId = currentUser?.id || 1;
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
+  const { user, isLoading } = useAuth();
+  const userId = user?.id || 1;
 
   return (
     <Switch>
-      <Route path="/">
+      {/* Protected Routes */}
+      <ProtectedRoute path="/" component={() => (
         <Layout>
           <Dashboard userId={userId} />
         </Layout>
-      </Route>
-      <Route path="/schedule">
+      )} />
+      <ProtectedRoute path="/schedule" component={() => (
         <Layout>
           <Schedule userId={userId} />
         </Layout>
-      </Route>
-      <Route path="/health">
+      )} />
+      <ProtectedRoute path="/health" component={() => (
         <Layout>
           <Health userId={userId} />
         </Layout>
-      </Route>
-      <Route path="/finance">
+      )} />
+      <ProtectedRoute path="/finance" component={() => (
         <Layout>
           <Finance userId={userId} />
         </Layout>
-      </Route>
-      <Route path="/discovery">
+      )} />
+      <ProtectedRoute path="/discovery" component={() => (
         <Layout>
           <Discovery userId={userId} />
         </Layout>
-      </Route>
+      )} />
+      
+      {/* Public Routes */}
+      <Route path="/auth" component={AuthPage} />
+      
       {/* Fallback to 404 */}
-      <Route>
-        <NotFound />
-      </Route>
+      <Route component={NotFound} />
     </Switch>
   );
 }
@@ -60,9 +60,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <UserProvider>
+        <AuthProvider>
           <Router />
-        </UserProvider>
+          <Toaster />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

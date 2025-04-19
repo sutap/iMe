@@ -1,6 +1,18 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useUser } from "@/hooks/use-user";
+import { useAuth } from "@/hooks/use-auth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogOut, Upload } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type NavItemProps = {
   href: string;
@@ -23,8 +35,51 @@ function NavItem({ href, icon, children, active }: NavItemProps) {
   );
 }
 
+function ProfilePictureUploader() {
+  const [isUploading, setIsUploading] = useState(false);
+  const { updateProfilePictureMutation } = useAuth();
+  
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    setIsUploading(true);
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      updateProfilePictureMutation.mutate({ 
+        profilePicture: base64String 
+      }, {
+        onSettled: () => setIsUploading(false)
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  return (
+    <div className="relative flex items-center">
+      <input
+        type="file"
+        id="profile-upload"
+        className="hidden"
+        accept="image/*"
+        onChange={handleUpload}
+        disabled={isUploading}
+      />
+      <label 
+        htmlFor="profile-upload" 
+        className="cursor-pointer flex items-center gap-2 w-full px-2 py-1 text-sm rounded-md hover:bg-gray-100"
+      >
+        <Upload className="h-4 w-4" />
+        <span>Update Picture</span>
+      </label>
+    </div>
+  );
+}
+
 function UserInfo() {
-  const { currentUser, isLoading } = useUser();
+  const { user, isLoading, logoutMutation } = useAuth();
   
   if (isLoading) {
     return (
@@ -35,11 +90,43 @@ function UserInfo() {
     );
   }
   
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+  
+  const initials = user?.displayName 
+    ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase() 
+    : user?.username?.[0]?.toUpperCase() || 'U';
+  
   return (
-    <div className="ml-3">
-      <p className="text-sm font-medium text-gray-900">{currentUser?.displayName || "User"}</p>
-      <p className="text-xs text-gray-500">{currentUser?.email || currentUser?.username || ""}</p>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div className="flex items-center ml-2 cursor-pointer">
+          <Avatar className="h-8 w-8 border border-gray-200">
+            <AvatarImage src={user?.profilePicture || ''} alt={user?.displayName || user?.username} />
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-gray-900">{user?.displayName || "User"}</p>
+            <p className="text-xs text-gray-500">{user?.email || user?.username || ""}</p>
+          </div>
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <ProfilePictureUploader />
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          className="text-red-600 cursor-pointer"
+          onClick={handleLogout}
+          disabled={logoutMutation.isPending}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>{logoutMutation.isPending ? 'Logging out...' : 'Logout'}</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
