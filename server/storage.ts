@@ -7,6 +7,8 @@ import {
   type DashboardStats
 } from "@shared/schema";
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, parseISO, isToday } from "date-fns";
+import { db } from "./db";
+import { eq, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -450,4 +452,286 @@ export class MemStorage implements IStorage {
   }
 }
 
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  // Event operations
+  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    const [event] = await db
+      .insert(events)
+      .values(insertEvent)
+      .returning();
+    return event;
+  }
+
+  async getEvents(userId: number): Promise<Event[]> {
+    return db
+      .select()
+      .from(events)
+      .where(eq(events.userId, userId))
+      .orderBy(events.startTime);
+  }
+
+  async getEventsByDateRange(userId: number, startDate: Date, endDate: Date): Promise<Event[]> {
+    return db
+      .select()
+      .from(events)
+      .where(
+        and(
+          eq(events.userId, userId),
+          gte(events.startTime, startDate),
+          lte(events.startTime, endDate)
+        )
+      )
+      .orderBy(events.startTime);
+  }
+
+  async getTodayEvents(userId: number): Promise<Event[]> {
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+    
+    return this.getEventsByDateRange(userId, start, end);
+  }
+
+  async getEvent(id: number): Promise<Event | undefined> {
+    const [event] = await db
+      .select()
+      .from(events)
+      .where(eq(events.id, id));
+    return event || undefined;
+  }
+
+  async updateEvent(id: number, eventUpdate: Partial<Event>): Promise<Event | undefined> {
+    const [event] = await db
+      .update(events)
+      .set(eventUpdate)
+      .where(eq(events.id, id))
+      .returning();
+    return event || undefined;
+  }
+
+  async deleteEvent(id: number): Promise<boolean> {
+    const result = await db
+      .delete(events)
+      .where(eq(events.id, id));
+    return true; // In PostgreSQL, delete won't give us a direct boolean
+  }
+
+  // Health metric operations
+  async createHealthMetric(insertMetric: InsertHealthMetric): Promise<HealthMetric> {
+    const [metric] = await db
+      .insert(healthMetrics)
+      .values(insertMetric)
+      .returning();
+    return metric;
+  }
+
+  async getHealthMetrics(userId: number): Promise<HealthMetric[]> {
+    return db
+      .select()
+      .from(healthMetrics)
+      .where(eq(healthMetrics.userId, userId))
+      .orderBy(({ desc }) => [desc(healthMetrics.date)]);
+  }
+
+  async getHealthMetricsByDateRange(userId: number, startDate: Date, endDate: Date): Promise<HealthMetric[]> {
+    return db
+      .select()
+      .from(healthMetrics)
+      .where(
+        and(
+          eq(healthMetrics.userId, userId),
+          gte(healthMetrics.date, startDate),
+          lte(healthMetrics.date, endDate)
+        )
+      )
+      .orderBy(healthMetrics.date);
+  }
+
+  async getTodayHealthMetric(userId: number): Promise<HealthMetric | undefined> {
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+    
+    const metrics = await this.getHealthMetricsByDateRange(userId, start, end);
+    return metrics.length > 0 ? metrics[0] : undefined;
+  }
+
+  async updateHealthMetric(id: number, metricUpdate: Partial<HealthMetric>): Promise<HealthMetric | undefined> {
+    const [metric] = await db
+      .update(healthMetrics)
+      .set(metricUpdate)
+      .where(eq(healthMetrics.id, id))
+      .returning();
+    return metric || undefined;
+  }
+
+  // Transaction operations
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
+    return transaction;
+  }
+
+  async getTransactions(userId: number): Promise<Transaction[]> {
+    return db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(({ desc }) => [desc(transactions.date)]);
+  }
+
+  async getTransactionsByDateRange(userId: number, startDate: Date, endDate: Date): Promise<Transaction[]> {
+    return db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          gte(transactions.date, startDate),
+          lte(transactions.date, endDate)
+        )
+      )
+      .orderBy(({ desc }) => [desc(transactions.date)]);
+  }
+
+  async getTransaction(id: number): Promise<Transaction | undefined> {
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.id, id));
+    return transaction || undefined;
+  }
+
+  async updateTransaction(id: number, transactionUpdate: Partial<Transaction>): Promise<Transaction | undefined> {
+    const [transaction] = await db
+      .update(transactions)
+      .set(transactionUpdate)
+      .where(eq(transactions.id, id))
+      .returning();
+    return transaction || undefined;
+  }
+
+  async deleteTransaction(id: number): Promise<boolean> {
+    await db
+      .delete(transactions)
+      .where(eq(transactions.id, id));
+    return true;
+  }
+
+  // Recommendation operations
+  async createRecommendation(insertRecommendation: InsertRecommendation): Promise<Recommendation> {
+    const [recommendation] = await db
+      .insert(recommendations)
+      .values(insertRecommendation)
+      .returning();
+    return recommendation;
+  }
+
+  async getRecommendations(userId: number): Promise<Recommendation[]> {
+    return db
+      .select()
+      .from(recommendations)
+      .where(eq(recommendations.userId, userId))
+      .orderBy(({ desc }) => [desc(recommendations.createdAt)]);
+  }
+
+  async getRecommendationsByType(userId: number, type: string): Promise<Recommendation[]> {
+    return db
+      .select()
+      .from(recommendations)
+      .where(
+        and(
+          eq(recommendations.userId, userId),
+          eq(recommendations.type, type)
+        )
+      )
+      .orderBy(({ desc }) => [desc(recommendations.createdAt)]);
+  }
+
+  async getNewRecommendations(userId: number): Promise<Recommendation[]> {
+    return db
+      .select()
+      .from(recommendations)
+      .where(
+        and(
+          eq(recommendations.userId, userId),
+          eq(recommendations.isNew, true)
+        )
+      )
+      .orderBy(({ desc }) => [desc(recommendations.createdAt)]);
+  }
+
+  async markRecommendationViewed(id: number): Promise<boolean> {
+    await db
+      .update(recommendations)
+      .set({ isNew: false })
+      .where(eq(recommendations.id, id));
+    return true;
+  }
+
+  // Dashboard stats
+  async getDashboardStats(userId: number): Promise<DashboardStats> {
+    // Get today's events
+    const todayEvents = await this.getTodayEvents(userId);
+    
+    // Get next upcoming event
+    const now = new Date();
+    const upcomingEvents = todayEvents.filter(event => new Date(event.startTime) > now);
+    const nextEvent = upcomingEvents.length > 0 ? 
+      upcomingEvents.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())[0] : 
+      null;
+    
+    // Get today's health metrics
+    const todayHealthMetric = await this.getTodayHealthMetric(userId);
+    
+    // Get this month's transactions
+    const startOfCurrentMonth = startOfMonth(now);
+    const endOfCurrentMonth = endOfMonth(now);
+    const thisMonthTransactions = await this.getTransactionsByDateRange(userId, startOfCurrentMonth, endOfCurrentMonth);
+    
+    // Calculate this month's expenses
+    const expenses = thisMonthTransactions
+      .filter(transaction => !transaction.isIncome)
+      .reduce((total, transaction) => total + transaction.amount, 0);
+    
+    // Get new recommendations count
+    const newRecommendations = await this.getNewRecommendations(userId);
+    
+    return {
+      todayEventsCount: todayEvents.length,
+      nextEvent,
+      stepsToday: todayHealthMetric?.steps || 0,
+      stepsGoal: 10000,
+      waterIntake: todayHealthMetric?.waterIntake || 0,
+      waterGoal: 8,
+      sleepHours: todayHealthMetric?.sleepHours || 0,
+      sleepGoal: 8,
+      expenseThisMonth: expenses,
+      budgetThisMonth: 1500,
+      recommendationsCount: newRecommendations.length
+    };
+  }
+}
+
+// Temporarily switch back to memory storage while fixing database issues
 export const storage = new MemStorage();
