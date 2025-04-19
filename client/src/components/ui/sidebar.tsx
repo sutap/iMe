@@ -29,10 +29,10 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 p-4 shadow-sm">
       <div className="flex items-center mb-8 px-2">
-        <div className="bg-indigo-100 rounded-lg p-2">
+        <div className="bg-blue-400 rounded-full p-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-primary"
+            className="h-6 w-6 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -41,11 +41,11 @@ export default function Sidebar() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
             />
           </svg>
         </div>
-        <h1 className="text-xl font-bold ml-2 text-gray-900">LifeAssist</h1>
+        <h1 className="text-xl font-bold ml-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-transparent bg-clip-text">iMe</h1>
       </div>
 
       <nav className="flex-1 space-y-1">

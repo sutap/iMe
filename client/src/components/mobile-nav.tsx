@@ -12,7 +12,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/" ? "text-primary" : "text-gray-500"
+              currentPath === "/" ? "text-blue-500" : "text-gray-500"
             )}
           >
             <svg
@@ -37,7 +37,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/schedule" ? "text-primary" : "text-gray-500"
+              currentPath === "/schedule" ? "text-blue-500" : "text-gray-500"
             )}
           >
             <svg
@@ -62,7 +62,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/health" ? "text-primary" : "text-gray-500"
+              currentPath === "/health" ? "text-blue-500" : "text-gray-500"
             )}
           >
             <svg
@@ -87,7 +87,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/finance" ? "text-primary" : "text-gray-500"
+              currentPath === "/finance" ? "text-blue-500" : "text-gray-500"
             )}
           >
             <svg
@@ -112,7 +112,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/discovery" ? "text-primary" : "text-gray-500"
+              currentPath === "/discovery" ? "text-blue-500" : "text-gray-500"
             )}
           >
             <svg
