@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -13,6 +14,9 @@ import Discovery from "@/pages/discovery";
 import AuthPage from "@/pages/auth-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+
+// Lazy-loaded components
+const AppStorePage = React.lazy(() => import('@/pages/app-store-page'));
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -49,6 +53,11 @@ function Router() {
       
       {/* Public Routes */}
       <Route path="/auth" component={AuthPage} />
+      <Route path="/app-store">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+          <AppStorePage />
+        </Suspense>
+      </Route>
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
