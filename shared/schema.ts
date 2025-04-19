@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, timestamp, real, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 import { z } from "zod";
 
 // User schema
@@ -17,6 +18,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   displayName: true,
   email: true,
 });
+
+// Define relations after all models are defined
+// Will move this later
 
 // Events schema
 export const events = pgTable("events", {
@@ -138,3 +142,39 @@ export type DashboardStats = {
   budgetThisMonth: number,
   recommendationsCount: number
 };
+
+// Define relations
+export const usersRelations = relations(users, ({ many }) => ({
+  events: many(events),
+  healthMetrics: many(healthMetrics),
+  transactions: many(transactions),
+  recommendations: many(recommendations),
+}));
+
+export const eventsRelations = relations(events, ({ one }) => ({
+  user: one(users, {
+    fields: [events.userId],
+    references: [users.id],
+  }),
+}));
+
+export const healthMetricsRelations = relations(healthMetrics, ({ one }) => ({
+  user: one(users, {
+    fields: [healthMetrics.userId],
+    references: [users.id],
+  }),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  user: one(users, {
+    fields: [transactions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const recommendationsRelations = relations(recommendations, ({ one }) => ({
+  user: one(users, {
+    fields: [recommendations.userId],
+    references: [users.id],
+  }),
+}));
