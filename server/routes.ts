@@ -27,6 +27,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // In a real app, you would use sessions or JWT
     res.json({ id: user.id, username: user.username, displayName: user.displayName });
   });
+  
+  // User endpoint to get user by ID
+  app.get("/api/users/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Don't return the password in the response
+    const { password, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  });
 
   // Dashboard endpoints
   app.get("/api/dashboard/:userId", async (req, res) => {

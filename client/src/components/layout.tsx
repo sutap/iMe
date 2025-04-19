@@ -3,9 +3,24 @@ import Sidebar from "@/components/ui/sidebar";
 import MobileNav from "@/components/mobile-nav";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUser } from "@/hooks/use-user";
 
 interface LayoutProps {
   children: React.ReactNode;
+}
+
+function MobileUserInfo() {
+  const { currentUser, isLoading } = useUser();
+  
+  if (isLoading) {
+    return null; // Don't show anything while loading on mobile
+  }
+  
+  return (
+    <span className="text-sm font-medium text-gray-900">
+      {currentUser?.displayName?.split(' ')[0] || "User"}
+    </span>
+  );
 }
 
 export default function Layout({ children }: LayoutProps) {
@@ -85,6 +100,7 @@ export default function Layout({ children }: LayoutProps) {
                     />
                   </svg>
                 </div>
+                <MobileUserInfo />
               </div>
             </div>
           </header>

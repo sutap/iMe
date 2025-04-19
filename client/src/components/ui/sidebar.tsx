@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/use-user";
 
 type NavItemProps = {
   href: string;
@@ -19,6 +20,26 @@ function NavItem({ href, icon, children, active }: NavItemProps) {
         <span>{children}</span>
       </a>
     </Link>
+  );
+}
+
+function UserInfo() {
+  const { currentUser, isLoading } = useUser();
+  
+  if (isLoading) {
+    return (
+      <div className="ml-3 animate-pulse">
+        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        <div className="h-3 w-20 bg-gray-200 rounded mt-1"></div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="ml-3">
+      <p className="text-sm font-medium text-gray-900">{currentUser?.displayName || "User"}</p>
+      <p className="text-xs text-gray-500">{currentUser?.email || currentUser?.username || ""}</p>
+    </div>
   );
 }
 
@@ -207,10 +228,7 @@ export default function Sidebar() {
               />
             </svg>
           </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-gray-900">Alex Morgan</p>
-            <p className="text-xs text-gray-500">alex@example.com</p>
-          </div>
+          <UserInfo />
         </div>
       </div>
     </aside>

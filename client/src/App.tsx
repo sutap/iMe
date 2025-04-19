@@ -10,11 +10,16 @@ import Health from "@/pages/health";
 import Finance from "@/pages/finance";
 import Discovery from "@/pages/discovery";
 import { useState, useEffect } from "react";
+import { UserProvider, useUser } from "@/hooks/use-user";
 
 function Router() {
-  // In a real app, this would be handled with authentication
-  // For demo purposes, we'll use a simple userId
-  const [userId, setUserId] = useState<number>(1);
+  const { currentUser, isLoading } = useUser();
+  // Fall back to userId 1 if not loaded yet
+  const userId = currentUser?.id || 1;
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
 
   return (
     <Switch>
@@ -55,7 +60,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router />
+        <UserProvider>
+          <Router />
+        </UserProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
