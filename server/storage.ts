@@ -9,12 +9,17 @@ import {
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, parseISO, isToday } from "date-fns";
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
+import session from "express-session";
 
 export interface IStorage {
+  // Session storage
+  sessionStore?: session.Store;
+
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserProfile(id: number, profileData: { profilePicture: string }): Promise<User | undefined>;
 
   // Event operations
   createEvent(event: InsertEvent): Promise<Event>;
@@ -106,6 +111,18 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
+
+  async updateUserProfile(id: number, profileData: { profilePicture: string }): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) return undefined;
+    
+    const updatedUser = { ...existingUser, profilePicture: profileData.profilePicture };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  // Session store property
+  sessionStore?: session.Store;
 
   // Event operations
   async createEvent(insertEvent: InsertEvent): Promise<Event> {
@@ -453,6 +470,9 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Session store property
+  sessionStore?: session.Store;
+  
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
@@ -469,6 +489,15 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+  
+  async updateUserProfile(id: number, profileData: { profilePicture: string }): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ profilePicture: profileData.profilePicture })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser || undefined;
   }
 
   // Event operations
