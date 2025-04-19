@@ -36,6 +36,11 @@ export default function CalendarView({ events, selectedDate, onDateSelect, onEve
         }}
         components={{
           Day: ({ day, ...props }) => {
+            // Add a safety check for undefined day
+            if (!day || !day.date) {
+              return <div {...props} />;
+            }
+            
             const date = day.date;
             const dateKey = format(date, "yyyy-MM-dd");
             const dayEvents = eventsByDate[dateKey] || [];
