@@ -14,6 +14,8 @@ import Discovery from "@/pages/discovery";
 import AuthPage from "@/pages/auth-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { AccessibilityProvider } from "@/hooks/use-voice-commands";
+import { AccessibilityToolbar } from "@/components/accessibility/accessibility-toolbar";
 
 // Lazy-loaded components
 const AppStorePage = React.lazy(() => import('@/pages/app-store-page'));
@@ -70,8 +72,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <Router />
-          <Toaster />
+          <AccessibilityProvider>
+            <Router />
+            <AccessibilityToolbar />
+            <Toaster />
+          </AccessibilityProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

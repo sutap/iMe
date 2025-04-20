@@ -1,10 +1,13 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useVoiceCommands } from "@/hooks/use-voice-commands";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Upload } from "lucide-react";
+import { LogOut, Upload, Mic, Eye, Type } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +16,96 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+function AccessibilitySettings() {
+  const { 
+    voiceEnabled, 
+    toggleVoiceEnabled, 
+    highContrastMode, 
+    toggleHighContrastMode,
+    fontSize,
+    setFontSize,
+    startListening,
+    stopListening,
+    isListening
+  } = useVoiceCommands();
+
+  return (
+    <div className="mt-4 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50">
+      <h3 className="text-sm font-medium mb-3">Accessibility</h3>
+      
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Mic className="h-4 w-4 text-gray-500" />
+            <Label htmlFor="voice-commands" className="text-sm">Voice Commands</Label>
+          </div>
+          <Switch 
+            id="voice-commands" 
+            checked={voiceEnabled}
+            onCheckedChange={toggleVoiceEnabled}
+          />
+        </div>
+        
+        {voiceEnabled && (
+          <Button 
+            size="sm" 
+            variant={isListening ? "destructive" : "outline"} 
+            className="w-full text-xs" 
+            onClick={isListening ? stopListening : startListening}
+          >
+            {isListening ? "Stop Listening" : "Start Listening"}
+          </Button>
+        )}
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Eye className="h-4 w-4 text-gray-500" />
+            <Label htmlFor="high-contrast" className="text-sm">High Contrast</Label>
+          </div>
+          <Switch 
+            id="high-contrast" 
+            checked={highContrastMode}
+            onCheckedChange={toggleHighContrastMode}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Type className="h-4 w-4 text-gray-500" />
+            <Label htmlFor="font-size" className="text-sm">Font Size</Label>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            <Button 
+              size="sm" 
+              variant={fontSize === 'normal' ? "default" : "outline"} 
+              className="text-xs py-1" 
+              onClick={() => setFontSize('normal')}
+            >
+              Normal
+            </Button>
+            <Button 
+              size="sm" 
+              variant={fontSize === 'large' ? "default" : "outline"} 
+              className="text-xs py-1" 
+              onClick={() => setFontSize('large')}
+            >
+              Large
+            </Button>
+            <Button 
+              size="sm" 
+              variant={fontSize === 'extra-large' ? "default" : "outline"} 
+              className="text-xs py-1" 
+              onClick={() => setFontSize('extra-large')}
+            >
+              XL
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type NavItemProps = {
   href: string;
@@ -297,6 +390,8 @@ export default function Sidebar() {
           </svg>
           <span>Settings</span>
         </div>
+        
+        <AccessibilitySettings />
 
         <div className="flex items-center mt-4 px-3 py-2">
           <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">

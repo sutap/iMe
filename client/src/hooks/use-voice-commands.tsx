@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { useLocation, useRoute } from 'wouter';
-import { useToast } from './use-toast';
+import { useLocation, useNavigate } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
 
-// Types for our Accessibility Context
 interface AccessibilityContextType {
   // Accessibility settings
   accessibilityMode: boolean;
@@ -28,248 +27,262 @@ interface AccessibilityContextType {
   stopSpeaking: () => void;
 }
 
-// Create context with default values
-const AccessibilityContext = createContext<AccessibilityContextType>({
-  accessibilityMode: false,
-  toggleAccessibilityMode: () => {},
-  highContrastMode: false,
-  toggleHighContrastMode: () => {},
-  fontSize: 'normal',
-  setFontSize: () => {},
-  isListening: false,
-  startListening: () => {},
-  stopListening: () => {},
-  transcript: '',
-  resetTranscript: () => {},
-  voiceEnabled: false,
-  toggleVoiceEnabled: () => {},
-  lastCommand: null,
-  speak: () => {},
-  stopSpeaking: () => {},
-});
+const AccessibilityContext = createContext<AccessibilityContextType | null>(null);
 
-// Provider component that wraps around our app
+// Create a browser-safe speech synthesis function
+const createSpeech = (text: string) => {
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    return utterance;
+  }
+  return null;
+};
+
 export const AccessibilityProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Accessibility settings
-  const [accessibilityMode, setAccessibilityMode] = useState<boolean>(false);
-  const [highContrastMode, setHighContrastMode] = useState<boolean>(false);
-  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'extra-large'>('normal');
-  const [voiceEnabled, setVoiceEnabled] = useState<boolean>(false);
+  const [accessibilityMode, setAccessibilityMode] = useState(false);
+  const [highContrastMode, setHighContrastMode] = useState(false);
+  const [fontSize, setFontSizeState] = useState<'normal' | 'large' | 'extra-large'>('normal');
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
-  
-  // Navigation and UI feedback
+
+  // Router
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
-  // Speech recognition setup
+
+  // Speech recognition
   const {
     transcript,
-    resetTranscript,
     listening: isListening,
-    browserSupportsSpeechRecognition,
-    isMicrophoneAvailable
+    resetTranscript,
+    browserSupportsSpeechRecognition
   } = useSpeechRecognition();
-  
-  // Check for browser support on mount
+
+  // Set font size classes on body
   useEffect(() => {
-    if (!browserSupportsSpeechRecognition) {
-      toast({
-        title: 'Speech Recognition Unavailable',
-        description: 'Your browser does not support speech recognition. Try Chrome for the best experience.',
-        variant: 'destructive',
-      });
+    document.body.classList.remove('font-size-large', 'font-size-extra-large');
+    if (fontSize !== 'normal') {
+      document.body.classList.add(`font-size-${fontSize}`);
     }
-    
-    if (!isMicrophoneAvailable) {
-      toast({
-        title: 'Microphone Access Required',
-        description: 'Please allow microphone access to use voice commands.',
-        variant: 'destructive',
-      });
-    }
-  }, [browserSupportsSpeechRecognition, isMicrophoneAvailable, toast]);
+  }, [fontSize]);
 
-  // Toggle accessibility mode
-  const toggleAccessibilityMode = () => {
-    setAccessibilityMode(prev => !prev);
-    
-    // When turning on accessibility mode, give audio feedback
-    if (!accessibilityMode) {
-      speak('Accessibility mode enabled.');
-    }
-  };
-
-  // Toggle high contrast mode
-  const toggleHighContrastMode = () => {
-    setHighContrastMode(prev => !prev);
-    
-    // Apply high contrast class to the document body
-    if (!highContrastMode) {
-      document.body.classList.add('high-contrast');
-      speak('High contrast mode enabled.');
-    } else {
-      document.body.classList.remove('high-contrast');
-      speak('High contrast mode disabled.');
-    }
-  };
-  
-  // Font size management
-  const changeFontSize = (size: 'normal' | 'large' | 'extra-large') => {
-    setFontSize(size);
-    
-    // Remove existing font size classes
-    document.body.classList.remove('font-size-normal', 'font-size-large', 'font-size-extra-large');
-    
-    // Add the new font size class
-    document.body.classList.add(`font-size-${size}`);
-    
-    speak(`Font size set to ${size}.`);
-  };
-  
-  // Toggle voice commands
-  const toggleVoiceEnabled = () => {
-    const newState = !voiceEnabled;
-    setVoiceEnabled(newState);
-    
-    if (newState) {
-      startListening();
-      speak('Voice commands activated.');
-    } else {
-      stopListening();
-      speak('Voice commands deactivated.');
-    }
-  };
-  
-  // Start listening for voice commands
-  const startListening = () => {
-    SpeechRecognition.startListening({ continuous: true });
-  };
-  
-  // Stop listening for voice commands
-  const stopListening = () => {
-    SpeechRecognition.stopListening();
-  };
-  
-  // Text-to-speech function
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-  
-  // Stop text-to-speech
-  const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-  };
-  
-  // Process voice commands
-  useEffect(() => {
-    if (!voiceEnabled || !transcript) return;
-
-    // Convert transcript to lowercase for easier matching
-    const command = transcript.toLowerCase().trim();
-    
-    // Only process if the command is different from the last one
-    if (command !== lastCommand && command.length > 0) {
-      setLastCommand(command);
-      
-      // Navigation commands
-      if (command.includes('go to dashboard') || command.includes('show dashboard')) {
-        navigate('/');
-        speak('Navigating to dashboard.');
-      } 
-      else if (command.includes('go to schedule') || command.includes('show schedule')) {
-        navigate('/schedule');
-        speak('Navigating to schedule.');
-      }
-      else if (command.includes('go to health') || command.includes('show health')) {
-        navigate('/health');
-        speak('Navigating to health.');
-      }
-      else if (command.includes('go to finance') || command.includes('show finance')) {
-        navigate('/finance');
-        speak('Navigating to finance.');
-      }
-      else if (command.includes('go to discovery') || command.includes('show discover')) {
-        navigate('/discovery');
-        speak('Navigating to discovery.');
-      }
-      
-      // Accessibility commands
-      else if (command.includes('high contrast on') || command.includes('enable high contrast')) {
-        setHighContrastMode(true);
-        document.body.classList.add('high-contrast');
-        speak('High contrast mode enabled.');
-      }
-      else if (command.includes('high contrast off') || command.includes('disable high contrast')) {
-        setHighContrastMode(false);
-        document.body.classList.remove('high-contrast');
-        speak('High contrast mode disabled.');
-      }
-      else if (command.includes('increase font size') || command.includes('larger text')) {
-        if (fontSize === 'normal') changeFontSize('large');
-        else if (fontSize === 'large') changeFontSize('extra-large');
-        speak('Font size increased.');
-      }
-      else if (command.includes('decrease font size') || command.includes('smaller text')) {
-        if (fontSize === 'extra-large') changeFontSize('large');
-        else if (fontSize === 'large') changeFontSize('normal');
-        speak('Font size decreased.');
-      }
-      else if (command.includes('normal font size') || command.includes('reset font size')) {
-        changeFontSize('normal');
-        speak('Font size reset to normal.');
-      }
-      
-      // Help command
-      else if (command.includes('what can i say') || command.includes('show commands') || 
-               command.includes('help') || command.includes('list commands')) {
-        speak('Available commands include: go to dashboard, go to schedule, go to health, go to finance, go to discovery, high contrast on, high contrast off, increase font size, decrease font size, normal font size, and stop listening.');
-        toast({
-          title: 'Voice Commands',
-          description: 'Try saying: "Go to dashboard", "High contrast on", "Increase font size", or "Stop listening"',
-          duration: 6000,
-        });
-      }
-      
-      // Turn off voice commands
-      else if (command.includes('stop listening') || command.includes('turn off voice') || 
-               command.includes('disable voice commands')) {
-        speak('Voice commands deactivated.');
-        setVoiceEnabled(false);
-        stopListening();
-      }
-    }
-    
-    // Auto-reset the transcript after a delay to prepare for the next command
-    const resetTimer = setTimeout(() => {
-      if (command === lastCommand) {
-        resetTranscript();
-        setLastCommand(null);
-      }
-    }, 5000);
-    
-    return () => clearTimeout(resetTimer);
-  }, [transcript, voiceEnabled, lastCommand, fontSize, navigate, resetTranscript, toast]);
-  
-  // Update the document body with accessibility classes when mode is toggled
+  // Set accessibility mode classes on body
   useEffect(() => {
     if (accessibilityMode) {
       document.body.classList.add('accessibility-mode');
     } else {
       document.body.classList.remove('accessibility-mode');
     }
-    
-    return () => {
-      // Clean up when the component unmounts
-      document.body.classList.remove('accessibility-mode', 'high-contrast', 
-        'font-size-normal', 'font-size-large', 'font-size-extra-large');
-    };
   }, [accessibilityMode]);
-  
+
+  // Set high contrast mode classes on body
+  useEffect(() => {
+    if (highContrastMode) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
+  }, [highContrastMode]);
+
+  // Process voice commands
+  useEffect(() => {
+    if (!isListening || !transcript || !voiceEnabled) return;
+
+    const lowercaseTranscript = transcript.toLowerCase().trim();
+    
+    // Only process if we have at least one word
+    if (lowercaseTranscript.length > 2) {
+      let commandProcessed = false;
+
+      // Navigation commands
+      if (lowercaseTranscript.includes('go to') || lowercaseTranscript.includes('navigate to')) {
+        const destinations = {
+          'dashboard': '/',
+          'home': '/',
+          'schedule': '/schedule',
+          'calendar': '/schedule',
+          'health': '/health',
+          'fitness': '/health',
+          'finance': '/finance',
+          'money': '/finance',
+          'discovery': '/discovery',
+          'search': '/discovery',
+          'settings': '/settings',
+          'login': '/auth',
+          'logout': '/auth',
+        };
+
+        for (const [keyword, path] of Object.entries(destinations)) {
+          if (lowercaseTranscript.includes(keyword)) {
+            navigate(path);
+            speak(`Navigating to ${keyword}`);
+            setLastCommand(`Navigate to ${keyword}`);
+            commandProcessed = true;
+            resetTranscript();
+            break;
+          }
+        }
+      }
+
+      // Accessibility commands
+      if (!commandProcessed) {
+        // Font size commands
+        if (lowercaseTranscript.includes('increase font') || 
+            lowercaseTranscript.includes('larger font') || 
+            lowercaseTranscript.includes('bigger text')) {
+          if (fontSize === 'normal') {
+            setFontSize('large');
+            speak('Increased font size to large');
+          } else if (fontSize === 'large') {
+            setFontSize('extra-large');
+            speak('Increased font size to extra large');
+          } else {
+            speak('Font size is already at maximum');
+          }
+          setLastCommand('Increase font size');
+          commandProcessed = true;
+        } 
+        else if (lowercaseTranscript.includes('decrease font') || 
+                 lowercaseTranscript.includes('smaller font') || 
+                 lowercaseTranscript.includes('smaller text')) {
+          if (fontSize === 'extra-large') {
+            setFontSize('large');
+            speak('Decreased font size to large');
+          } else if (fontSize === 'large') {
+            setFontSize('normal');
+            speak('Decreased font size to normal');
+          } else {
+            speak('Font size is already at minimum');
+          }
+          setLastCommand('Decrease font size');
+          commandProcessed = true;
+        }
+        else if (lowercaseTranscript.includes('normal font') || 
+                 lowercaseTranscript.includes('reset font')) {
+          setFontSize('normal');
+          speak('Font size reset to normal');
+          setLastCommand('Reset font size');
+          commandProcessed = true;
+        }
+
+        // Contrast commands
+        else if (lowercaseTranscript.includes('high contrast') || 
+                 lowercaseTranscript.includes('dark mode')) {
+          if (lowercaseTranscript.includes('disable') || 
+              lowercaseTranscript.includes('turn off') ||
+              lowercaseTranscript.includes('deactivate')) {
+            setHighContrastMode(false);
+            speak('High contrast mode disabled');
+            setLastCommand('Disable high contrast mode');
+          } else {
+            setHighContrastMode(true);
+            speak('High contrast mode enabled');
+            setLastCommand('Enable high contrast mode');
+          }
+          commandProcessed = true;
+        }
+      }
+
+      // If a command was processed, show toast and reset transcript
+      if (commandProcessed) {
+        toast({
+          title: "Voice Command",
+          description: `Processed: "${transcript}"`,
+          duration: 3000,
+        });
+        resetTranscript();
+      }
+    }
+  }, [transcript, voiceEnabled, isListening]);
+
+  // Accessibility toggle functions
+  const toggleAccessibilityMode = () => {
+    setAccessibilityMode(!accessibilityMode);
+    toast({
+      title: `Accessibility Mode ${!accessibilityMode ? 'Enabled' : 'Disabled'}`,
+      duration: 3000,
+    });
+  };
+
+  const toggleHighContrastMode = () => {
+    setHighContrastMode(!highContrastMode);
+    toast({
+      title: `High Contrast Mode ${!highContrastMode ? 'Enabled' : 'Disabled'}`,
+      duration: 3000,
+    });
+  };
+
+  const setFontSize = (size: 'normal' | 'large' | 'extra-large') => {
+    setFontSizeState(size);
+    toast({
+      title: `Font Size: ${size.charAt(0).toUpperCase() + size.slice(1)}`,
+      duration: 3000,
+    });
+  };
+
+  const toggleVoiceEnabled = () => {
+    const newState = !voiceEnabled;
+    setVoiceEnabled(newState);
+    
+    if (newState && browserSupportsSpeechRecognition) {
+      startListening();
+      toast({
+        title: "Voice Commands Enabled",
+        description: "You can now use voice commands to control the app",
+        duration: 3000,
+      });
+    } else if (!newState && isListening) {
+      stopListening();
+      toast({
+        title: "Voice Commands Disabled",
+        duration: 3000,
+      });
+    } else if (newState && !browserSupportsSpeechRecognition) {
+      toast({
+        title: "Voice Commands Not Supported",
+        description: "Your browser doesn't support speech recognition",
+        variant: "destructive",
+        duration: 5000,
+      });
+      setVoiceEnabled(false);
+    }
+  };
+
+  const startListening = () => {
+    if (browserSupportsSpeechRecognition) {
+      SpeechRecognition.startListening({ continuous: true });
+    } else {
+      toast({
+        title: "Voice Commands Not Supported",
+        description: "Your browser doesn't support speech recognition",
+        variant: "destructive",
+        duration: 5000,
+      });
+    }
+  };
+
+  const stopListening = () => {
+    SpeechRecognition.stopListening();
+    resetTranscript();
+  };
+
+  // Text to speech functions
+  const speak = (text: string) => {
+    const utterance = createSpeech(text);
+    if (utterance) {
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
   return (
     <AccessibilityContext.Provider
       value={{
@@ -278,7 +291,7 @@ export const AccessibilityProvider: React.FC<{ children: ReactNode }> = ({ child
         highContrastMode,
         toggleHighContrastMode,
         fontSize,
-        setFontSize: changeFontSize,
+        setFontSize,
         isListening,
         startListening,
         stopListening,
@@ -288,7 +301,7 @@ export const AccessibilityProvider: React.FC<{ children: ReactNode }> = ({ child
         toggleVoiceEnabled,
         lastCommand,
         speak,
-        stopSpeaking
+        stopSpeaking,
       }}
     >
       {children}
@@ -296,18 +309,21 @@ export const AccessibilityProvider: React.FC<{ children: ReactNode }> = ({ child
   );
 };
 
-// Custom hook to use the accessibility context
-export const useVoiceCommands = () => useContext(AccessibilityContext);
+export const useVoiceCommands = () => {
+  const context = useContext(AccessibilityContext);
+  if (!context) {
+    throw new Error('useVoiceCommands must be used within an AccessibilityProvider');
+  }
+  return context;
+};
 
-// Higher-order component to wrap components that need accessibility features
+// HOC to provide voice command functionality to components
 export function withVoiceCommands<T extends {}>(
   Component: React.ComponentType<T>
 ): React.FC<T> {
   return (props: T) => {
-    return (
-      <AccessibilityProvider>
-        <Component {...props} />
-      </AccessibilityProvider>
-    );
+    const accessibilityContext = useVoiceCommands();
+    
+    return <Component {...props} accessibilityContext={accessibilityContext} />;
   };
 }

@@ -1,192 +1,257 @@
-import React, { useState } from 'react';
-import { useVoiceCommands } from '@/hooks/use-voice-commands';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Mic, MicOff, Eye, Type, Volume2, Maximize, PanelLeftClose } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useVoiceCommands } from "@/hooks/use-voice-commands";
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { 
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from "@/components/ui/popover";
+import { 
+  Settings, 
+  Mic, 
+  Eye, 
+  Type, 
+  ChevronUp
+} from "lucide-react";
 
-interface AccessibilityToolbarProps {
-  className?: string;
-}
-
-export const AccessibilityToolbar: React.FC<AccessibilityToolbarProps> = ({ className }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const {
-    accessibilityMode,
-    toggleAccessibilityMode,
-    highContrastMode,
+export function AccessibilityToolbar() {
+  const { 
+    voiceEnabled, 
+    toggleVoiceEnabled,
+    highContrastMode, 
     toggleHighContrastMode,
     fontSize,
     setFontSize,
-    voiceEnabled,
-    toggleVoiceEnabled,
+    startListening,
+    stopListening,
     isListening,
     transcript,
+    lastCommand
   } = useVoiceCommands();
-
+  
+  const [expanded, setExpanded] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [showMicAnimation, setShowMicAnimation] = useState(false);
+  
+  // Keep track of the transcript changes to show mic animation
+  useEffect(() => {
+    if (isListening && transcript) {
+      setShowMicAnimation(true);
+      const timer = setTimeout(() => {
+        setShowMicAnimation(false);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [transcript, isListening]);
+  
+  // For mobile devices that need a fixed position toolbar
   return (
-    <div className={cn("fixed bottom-20 right-4 md:bottom-4 z-50 flex flex-col items-end", className)}>
-      {/* Voice command status indicator (only shown when voice is enabled) */}
-      {voiceEnabled && (
-        <div className="mb-3 bg-white rounded-lg shadow-lg p-3 max-w-xs">
-          <div className="flex items-center gap-2 mb-1">
-            <div className={`h-3 w-3 rounded-full ${isListening ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
-            <span className="text-sm font-medium">
-              {isListening ? 'Listening...' : 'Voice paused'}
-            </span>
-          </div>
-          {transcript && (
-            <div className="text-sm text-gray-500 italic truncate max-w-[200px]">
-              "{transcript}"
-            </div>
+    <>
+      {/* Main Toolbar (Mobile Only) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-2">
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center"
+          >
+            <Settings className="h-5 w-5" />
+            <span className="ml-2 text-sm">Accessibility</span>
+            <ChevronUp className={`ml-1 h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </Button>
+          
+          {voiceEnabled && (
+            <Button 
+              variant={isListening ? "destructive" : "outline"} 
+              size="icon"
+              className={`relative ${showMicAnimation ? 'animate-pulse' : ''}`}
+              onClick={isListening ? stopListening : startListening}
+            >
+              <Mic className="h-4 w-4" />
+              {showMicAnimation && (
+                <span className="absolute inset-0 rounded-full bg-blue-500 opacity-25 animate-ping"></span>
+              )}
+            </Button>
           )}
         </div>
-      )}
-
-      {/* Main accessibility button that toggles the toolbar popover */}
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <Button 
-            variant="default" 
-            size="lg" 
-            className={cn(
-              "h-12 w-12 rounded-full flex items-center justify-center shadow-lg",
-              accessibilityMode ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-800 hover:bg-gray-900"
-            )}
-            aria-label="Accessibility options"
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="24" 
-              height="24" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              className="text-white"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"></path>
-            </svg>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent side="top" align="end" className="w-72 p-4">
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg mb-2">Accessibility Options</h3>
-            
-            {/* Accessibility Mode Toggle */}
+        
+        {expanded && (
+          <div className="p-3 space-y-4 border-t border-gray-200 mt-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Maximize className="h-4 w-4" />
-                <Label htmlFor="accessibility-mode" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Accessibility Mode
-                </Label>
+                <Mic className="h-4 w-4 text-gray-500" />
+                <Label htmlFor="voice-commands-mobile" className="text-sm">Voice Commands</Label>
               </div>
               <Switch 
-                id="accessibility-mode" 
-                checked={accessibilityMode} 
-                onCheckedChange={toggleAccessibilityMode} 
-              />
-            </div>
-
-            {/* High Contrast Mode Toggle */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Eye className="h-4 w-4" />
-                <Label htmlFor="high-contrast" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  High Contrast
-                </Label>
-              </div>
-              <Switch 
-                id="high-contrast" 
-                checked={highContrastMode} 
-                onCheckedChange={toggleHighContrastMode} 
-              />
-            </div>
-            
-            {/* Voice Commands Toggle */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {voiceEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                <Label htmlFor="voice-commands" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Voice Commands
-                </Label>
-              </div>
-              <Switch 
-                id="voice-commands" 
-                checked={voiceEnabled} 
+                id="voice-commands-mobile" 
+                checked={voiceEnabled}
                 onCheckedChange={toggleVoiceEnabled}
               />
             </div>
             
-            {/* Font Size Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Eye className="h-4 w-4 text-gray-500" />
+                <Label htmlFor="high-contrast-mobile" className="text-sm">High Contrast</Label>
+              </div>
+              <Switch 
+                id="high-contrast-mobile" 
+                checked={highContrastMode}
+                onCheckedChange={toggleHighContrastMode}
+              />
+            </div>
+            
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <Type className="h-4 w-4" />
-                <Label className="text-sm font-medium leading-none">Font Size</Label>
+                <Type className="h-4 w-4 text-gray-500" />
+                <Label className="text-sm">Font Size</Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-3 gap-1">
                 <Button 
-                  variant={fontSize === 'normal' ? 'default' : 'outline'} 
                   size="sm" 
-                  onClick={() => setFontSize('normal')} 
-                  className="flex-1"
+                  variant={fontSize === 'normal' ? "default" : "outline"} 
+                  className="text-xs py-1" 
+                  onClick={() => setFontSize('normal')}
                 >
-                  A
+                  Normal
                 </Button>
                 <Button 
-                  variant={fontSize === 'large' ? 'default' : 'outline'} 
                   size="sm" 
-                  onClick={() => setFontSize('large')} 
-                  className="flex-1 text-lg"
+                  variant={fontSize === 'large' ? "default" : "outline"} 
+                  className="text-xs py-1" 
+                  onClick={() => setFontSize('large')}
                 >
-                  A
+                  Large
                 </Button>
                 <Button 
-                  variant={fontSize === 'extra-large' ? 'default' : 'outline'} 
                   size="sm" 
-                  onClick={() => setFontSize('extra-large')} 
-                  className="flex-1 text-xl"
+                  variant={fontSize === 'extra-large' ? "default" : "outline"} 
+                  className="text-xs py-1" 
+                  onClick={() => setFontSize('extra-large')}
                 >
-                  A
+                  XL
                 </Button>
               </div>
             </div>
-            
-            {/* Voice Command Help */}
-            {voiceEnabled && (
-              <div className="text-sm text-gray-500 border-t pt-3 mt-3">
-                <p className="font-medium mb-1 flex items-center">
-                  <Volume2 className="h-4 w-4 mr-1" /> Voice Commands
-                </p>
-                <p className="text-xs">Try saying:</p>
-                <ul className="text-xs list-disc pl-4 mt-1 space-y-1">
-                  <li>"Go to dashboard"</li>
-                  <li>"Show health"</li>
-                  <li>"High contrast on"</li>
-                  <li>"Increase font size"</li>
-                  <li>"What can I say?"</li>
-                </ul>
-              </div>
-            )}
-            
-            {/* Close button */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full mt-2" 
-              onClick={() => setIsOpen(false)}
-            >
-              <PanelLeftClose className="h-4 w-4 mr-2" />
-              Close Menu
-            </Button>
           </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+        )}
+      </div>
+      
+      {/* Floating Popover Button (Desktop Only) */}
+      <div className="hidden md:block fixed bottom-6 right-6 z-50">
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button className="rounded-full w-12 h-12 shadow-lg flex items-center justify-center">
+              <Settings className="h-6 w-6" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <h3 className="font-medium text-base">Accessibility Controls</h3>
+              
+              {voiceEnabled && isListening && (
+                <div className="bg-blue-50 p-2 rounded-md border border-blue-200 flex items-center space-x-2">
+                  <Mic className={`h-4 w-4 text-blue-500 ${showMicAnimation ? 'animate-pulse' : ''}`} />
+                  <p className="text-sm text-blue-700 flex-1">
+                    {transcript ? `"${transcript}"` : "Listening..."}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={stopListening}
+                  >
+                    <span className="sr-only">Stop listening</span>
+                    <span className="h-2 w-2 bg-red-500 rounded-sm"></span>
+                  </Button>
+                </div>
+              )}
+              
+              {lastCommand && (
+                <div className="text-xs text-gray-500">
+                  Last command: "{lastCommand}"
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Mic className="h-4 w-4 text-gray-500" />
+                  <Label htmlFor="voice-commands-popover" className="text-sm">Voice Commands</Label>
+                </div>
+                <Switch 
+                  id="voice-commands-popover" 
+                  checked={voiceEnabled}
+                  onCheckedChange={toggleVoiceEnabled}
+                />
+              </div>
+              
+              {voiceEnabled && (
+                <Button 
+                  size="sm"
+                  variant={isListening ? "destructive" : "outline"} 
+                  className="w-full" 
+                  onClick={isListening ? stopListening : startListening}
+                >
+                  {isListening ? "Stop Listening" : "Start Listening"}
+                </Button>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Eye className="h-4 w-4 text-gray-500" />
+                  <Label htmlFor="high-contrast-popover" className="text-sm">High Contrast</Label>
+                </div>
+                <Switch 
+                  id="high-contrast-popover" 
+                  checked={highContrastMode}
+                  onCheckedChange={toggleHighContrastMode}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Type className="h-4 w-4 text-gray-500" />
+                  <Label className="text-sm">Font Size</Label>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  <Button 
+                    size="sm" 
+                    variant={fontSize === 'normal' ? "default" : "outline"} 
+                    className="text-xs py-1" 
+                    onClick={() => setFontSize('normal')}
+                  >
+                    Normal
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={fontSize === 'large' ? "default" : "outline"} 
+                    className="text-xs py-1" 
+                    onClick={() => setFontSize('large')}
+                  >
+                    Large
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={fontSize === 'extra-large' ? "default" : "outline"} 
+                    className="text-xs py-1" 
+                    onClick={() => setFontSize('extra-large')}
+                  >
+                    XL
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="pt-2 text-xs text-gray-500">
+                <p>Use voice commands like "go to dashboard", "navigate to health", "increase font size", or "enable high contrast".</p>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </>
   );
-};
+}
