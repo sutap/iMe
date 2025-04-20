@@ -1,0 +1,22 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="512" cy="512" r="512" fill="#3B82F6"/>
+  
+  <!-- Gradient Overlay -->
+  <circle cx="512" cy="512" r="512" fill="url(#paint0_linear)"/>
+  
+  <!-- Person Icon -->
+  <path d="M512 320C565.019 320 608 362.981 608 416C608 469.019 565.019 512 512 512C458.981 512 416 469.019 416 416C416 362.981 458.981 320 512 320Z" fill="white" stroke="white" stroke-width="32" stroke-miterlimit="10"/>
+  <path d="M336 704C336 622.144 414.144 556 512 556C609.856 556 688 622.144 688 704" fill="none" stroke="white" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- "iMe" Text -->
+  <text x="512" y="800" font-family="Arial, sans-serif" font-size="144" font-weight="bold" text-anchor="middle" fill="white">iMe</text>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -1,0 +1,31 @@
+<svg width="2732" height="2732" viewBox="0 0 2732 2732" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with light blue matching our app -->
+  <rect width="2732" height="2732" fill="#EEF7FF"/>
+  
+  <!-- Central Icon -->
+  <g transform="translate(1366, 1366) scale(2.5)">
+    <!-- Blue Circle Background -->
+    <circle cx="0" cy="0" r="120" fill="#3B82F6"/>
+    
+    <!-- Gradient Overlay -->
+    <circle cx="0" cy="0" r="120" fill="url(#paint0_linear)"/>
+    
+    <!-- Person Icon -->
+    <path d="M0 -30C14.33 -30 26 -18.33 26 -4C26 10.33 14.33 22 0 22C-14.33 22 -26 10.33 -26 -4C-26 -18.33 -14.33 -30 0 -30Z" fill="white" stroke="white" stroke-width="8" stroke-miterlimit="10"/>
+    <path d="M-42 54C-42 34.12 -23.88 18 0 18C23.88 18 42 34.12 42 54" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- App Name -->
+  <text x="1366" y="1700" font-family="Arial, sans-serif" font-size="120" font-weight="bold" text-anchor="middle" fill="#3B82F6">iMe</text>
+  
+  <!-- Tagline -->
+  <text x="1366" y="1800" font-family="Arial, sans-serif" font-size="60" text-anchor="middle" fill="#64748B">Your Personal Life Assistant</text>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="paint0_linear" x1="-120" y1="-120" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+  </defs>
+</svg>
