@@ -1,9 +1,9 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.ime.app',
+  appId: 'com.imeapp.app',
   appName: 'iMe',
-  webDir: 'dist',
+  webDir: 'dist/client',
   server: {
     androidScheme: 'https'
   },
@@ -11,6 +11,8 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       backgroundColor: '#eef7ff', // Light blue background matching our app
+      showSpinner: true,
+      spinnerColor: '#3B82F6',
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP'
     }
