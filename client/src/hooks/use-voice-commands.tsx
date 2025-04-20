@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { useLocation, useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 
 interface AccessibilityContextType {
@@ -49,8 +49,8 @@ export const AccessibilityProvider: React.FC<{ children: ReactNode }> = ({ child
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [lastCommand, setLastCommand] = useState<string | null>(null);
 
-  // Router
-  const [, navigate] = useLocation();
+  // Router 
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   // Speech recognition
@@ -117,7 +117,7 @@ export const AccessibilityProvider: React.FC<{ children: ReactNode }> = ({ child
 
         for (const [keyword, path] of Object.entries(destinations)) {
           if (lowercaseTranscript.includes(keyword)) {
-            navigate(path);
+            setLocation(path);
             speak(`Navigating to ${keyword}`);
             setLastCommand(`Navigate to ${keyword}`);
             commandProcessed = true;
