@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useVoiceCommands } from "@/hooks/use-voice-commands";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Upload, Mic, Eye, Type } from "lucide-react";
+import { LogOut, Upload, Mic, Eye, Type, Palette } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";

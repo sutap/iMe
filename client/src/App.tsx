@@ -19,6 +19,7 @@ import { AccessibilityToolbar } from "@/components/accessibility/accessibility-t
 
 // Lazy-loaded components
 const AppStorePage = React.lazy(() => import('@/pages/app-store-page'));
+const ThemeSettings = React.lazy(() => import('@/pages/theme-settings'));
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -51,6 +52,12 @@ function Router() {
         <Layout>
           <Discovery userId={userId} />
         </Layout>
+      )} />
+      
+      <ProtectedRoute path="/theme-settings" component={() => (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+          <ThemeSettings />
+        </Suspense>
       )} />
       
       {/* Public Routes */}

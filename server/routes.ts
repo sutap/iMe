@@ -10,6 +10,8 @@ import {
   insertUserSchema 
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import fs from 'fs';
+import path from 'path';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication system
@@ -362,6 +364,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: error.errors });
       }
       res.status(500).json({ message: "Failed to create recommendation" });
+    }
+  });
+
+  // Theme endpoint
+  app.post("/api/theme", async (req, res) => {
+    try {
+      // Validate theme schema
+      const themeSchema = z.object({
+        variant: z.enum(['professional', 'tint', 'vibrant']),
+        primary: z.string(),
+        appearance: z.enum(['light', 'dark', 'system']),
+        radius: z.number().min(0).max(2)
+      });
+      
+      const themeData = themeSchema.parse(req.body);
+      
+      // Update theme.json file
+      const themePath = path.resolve('./theme.json');
+      
+      try {
+        fs.writeFileSync(themePath, JSON.stringify(themeData, null, 2));
+        res.status(200).json({ message: "Theme updated successfully" });
+      } catch (fileError) {
+        console.error('Error writing theme file:', fileError);
+        res.status(500).json({ message: "Failed to update theme file" });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update theme" });
+    }
+  });
+  
+  // Get current theme
+  app.get("/api/theme", async (req, res) => {
+    try {
+      const themePath = path.resolve('./theme.json');
+      
+      if (!fs.existsSync(themePath)) {
+        return res.status(404).json({ message: "Theme file not found" });
+      }
+      
+      const themeContent = fs.readFileSync(themePath, 'utf8');
+      const themeData = JSON.parse(themeContent);
+      
+      res.status(200).json(themeData);
+    } catch (error) {
+      console.error('Error reading theme file:', error);
+      res.status(500).json({ message: "Failed to read theme file" });
     }
   });
 
