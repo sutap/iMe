@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { Palette } from "lucide-react";
 
 export default function MobileNav() {
   const [location] = useLocation();
@@ -130,6 +131,18 @@ export default function MobileNav() {
               />
             </svg>
             <span className="text-xs mt-1">Discover</span>
+          </a>
+        </Link>
+        
+        <Link href="/theme-settings">
+          <a
+            className={cn(
+              "flex flex-col items-center justify-center flex-1",
+              currentPath === "/theme-settings" ? "text-blue-500" : "text-gray-500"
+            )}
+          >
+            <Palette className="h-6 w-6" />
+            <span className="text-xs mt-1">Theme</span>
           </a>
         </Link>
       </div>
