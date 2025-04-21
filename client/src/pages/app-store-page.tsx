@@ -8,14 +8,14 @@ const AppStorePage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 to-indigo-100 py-16 px-4">
+      <section className="relative bg-gradient-to-br from-[hsl(83,23%,95%)] to-[hsl(83,30%,90%)] py-16 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="text-center md:text-left">
-              <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 mb-4">
+              <Badge variant="outline" className="bg-[hsl(100,40%,90%)] text-[hsl(100,40%,30%)] border-[hsl(100,40%,80%)] mb-4">
                 App Store Ready
               </Badge>
-              <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-[hsl(100,40%,40%)] to-[hsl(100,40%,30%)] bg-clip-text text-transparent">
                 Your Life, Organized
               </h1>
               <p className="text-gray-700 text-lg mb-8 max-w-lg mx-auto md:mx-0">
@@ -43,8 +43,8 @@ const AppStorePage = () => {
             </div>
             <div className="flex justify-center md:justify-end">
               <div className="relative">
-                <div className="absolute -top-6 -left-6 w-64 h-64 bg-blue-200 rounded-full filter blur-3xl opacity-30"></div>
-                <div className="absolute -bottom-6 -right-6 w-64 h-64 bg-indigo-200 rounded-full filter blur-3xl opacity-30"></div>
+                <div className="absolute -top-6 -left-6 w-64 h-64 bg-[hsl(100,40%,80%)] rounded-full filter blur-3xl opacity-30"></div>
+                <div className="absolute -bottom-6 -right-6 w-64 h-64 bg-[hsl(100,30%,75%)] rounded-full filter blur-3xl opacity-30"></div>
                 <div className="relative w-[280px]">
                   <div className="absolute top-0 right-0 -mr-4 -mt-4 bg-gradient-to-br from-green-400 to-green-500 text-white text-xs font-bold px-3 py-1 rounded-full transform rotate-12">
                     New!
@@ -77,9 +77,9 @@ const AppStorePage = () => {
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl">
-              <div className="rounded-full bg-blue-100 w-12 h-12 flex items-center justify-center mb-4">
-                <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-gradient-to-br from-[hsl(100,40%,95%)] to-[hsl(100,40%,90%)] p-6 rounded-xl">
+              <div className="rounded-full bg-[hsl(100,40%,85%)] w-12 h-12 flex items-center justify-center mb-4">
+                <svg className="h-6 w-6 text-[hsl(100,40%,40%)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -192,8 +192,8 @@ const AppStorePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <div className="flex items-center mb-4">
-                <div className="rounded-full bg-blue-100 p-2 mr-3">
-                  <Shield className="h-5 w-5 text-blue-600" />
+                <div className="rounded-full bg-[hsl(100,40%,90%)] p-2 mr-3">
+                  <Shield className="h-5 w-5 text-[hsl(100,40%,40%)]" />
                 </div>
                 <h3 className="font-semibold text-lg">Privacy First</h3>
               </div>
@@ -355,15 +355,15 @@ const AppStorePage = () => {
       </section>
 
       {/* Download CTA */}
-      <section className="py-16 px-4 bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+      <section className="py-16 px-4 bg-gradient-to-br from-[hsl(100,40%,50%)] to-[hsl(100,40%,30%)] text-white">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Daily Routine?</h2>
-          <p className="max-w-2xl mx-auto mb-8 text-blue-100">
+          <p className="max-w-2xl mx-auto mb-8 text-[hsl(100,60%,95%)]">
             Download iMe today and join thousands of users who have simplified their lives,
             improved their health, and taken control of their finances.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg flex items-center justify-center">
+            <button className="bg-white text-[hsl(100,40%,40%)] hover:bg-[hsl(100,40%,98%)] px-6 py-3 rounded-lg flex items-center justify-center">
               <svg className="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.05 20.28c-.98.95-2.05.02-3.16-.8-1.15-.85-2.26-.87-3.38 0-1.56 1.22-2.38 1.02-3.28.07-5.72-6.2-3.11-15.52 4.29-15.5 1.99.01 3.35 1.12 4.42 1.14 1.06.02 3.06-1.39 5.26-.59.88.31 3.31 1.28 4.85 4.68-4.48 2.58-3.85 8.83.35 10.72-1.43 2.78-3.17 4.3-5.35 2.28-1.07-1.01-2.1-1-3 0m-3.75-18a4.27 4.27 0 01-1 3.28 4.2 4.2 0 01-3 1.36 4.35 4.35 0 013.1-4.62 4.59 4.59 0 111.9-.02z"/>
               </svg>
@@ -372,7 +372,7 @@ const AppStorePage = () => {
                 <div className="text-sm font-semibold -mt-1">App Store</div>
               </div>
             </button>
-            <button className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg flex items-center justify-center">
+            <button className="bg-white text-[hsl(100,40%,40%)] hover:bg-[hsl(100,40%,98%)] px-6 py-3 rounded-lg flex items-center justify-center">
               <svg className="h-6 w-6 mr-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3.2 13.09l8.9 5.16c.49.29 1.31.29 1.81 0l8.9-5.16c.42-.26.42-.91 0-1.16l-8.9-5.16c-.49-.28-1.3-.28-1.81 0L3.2 11.93c-.43.25-.43.9 0 1.16M5 15v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V15l-3 0m10 0h3v3.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V15m3-10v8h2V6c0-1.14-.95-2.06-2.11-2-1.05.06-1.89.95-1.89 2m-18 8h2V5c0-1.1.9-2 2-2h10c0-.57-.43-1.05-.99-1.11L5.03 2C3.91 2.03 3 2.98 3 4.11v8.89z"/>
               </svg>
@@ -391,7 +391,7 @@ const AppStorePage = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <div className="bg-blue-400 rounded-full p-2 mr-2">
+                <div className="bg-[hsl(100,40%,50%)] rounded-full p-2 mr-2">
                   <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
