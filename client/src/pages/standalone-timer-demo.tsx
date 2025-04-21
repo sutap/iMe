@@ -13,7 +13,7 @@ export default function StandaloneTimerDemo() {
   const [paused, setPaused] = useState(false);
   
   return (
-    <div className="min-h-screen flex flex-col bg-[hsl(181,76%,55%)]">
+    <div className="min-h-screen flex flex-col bg-[hsl(100,40%,60%)]">
       {/* Header section */}
       <header className="pt-8 px-6 pb-4">
         <h1 className="text-white text-2xl font-bold">MY PROJECTS</h1>
@@ -86,8 +86,8 @@ export default function StandaloneTimerDemo() {
       </div>
       
       {/* Background elements */}
-      <div className="absolute top-0 right-0 w-20 h-20 bg-[hsl(181,76%,60%)] rounded-bl-full opacity-30" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-[hsl(181,76%,60%)] rounded-tr-full opacity-30" />
+      <div className="absolute top-0 right-0 w-20 h-20 bg-[hsl(100,40%,70%)] rounded-bl-full opacity-30" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-[hsl(100,40%,70%)] rounded-tr-full opacity-30" />
     </div>
   );
 }
