@@ -416,6 +416,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to read theme file" });
     }
   });
+  
+  // Special route for timer demo - no authentication required
+  app.get("/timer", (_req, res) => {
+    res.sendFile(path.resolve(process.cwd(), "client", "timer-demo.html"));
+  });
 
   const httpServer = createServer(app);
   return httpServer;

@@ -20,6 +20,7 @@ import { AccessibilityToolbar } from "@/components/accessibility/accessibility-t
 // Lazy-loaded components
 const AppStorePage = React.lazy(() => import('@/pages/app-store-page'));
 const ThemeSettings = React.lazy(() => import('@/pages/theme-settings'));
+const TimerDemo = React.lazy(() => import('@/pages/timer-demo'));
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -65,6 +66,12 @@ function Router() {
       <Route path="/app-store">
         <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
           <AppStorePage />
+        </Suspense>
+      </Route>
+
+      <Route path="/timer-demo">
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-[hsl(181,76%,55%)] text-white">Loading...</div>}>
+          <TimerDemo />
         </Suspense>
       </Route>
       

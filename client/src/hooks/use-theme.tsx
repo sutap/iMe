@@ -11,8 +11,13 @@ export type ColorScheme = {
 // Predefined color schemes
 export const COLOR_SCHEMES: ColorScheme[] = [
   {
+    name: 'Teal Minimalist',
+    primary: 'hsl(181, 76%, 55%)', // Teal color from the reference design
+    variant: 'vibrant'
+  },
+  {
     name: 'Default Blue',
-    primary: 'hsl(244 82% 60%)', // Current blue from theme.json
+    primary: 'hsl(244 82% 60%)', // Original blue
     variant: 'professional'
   },
   {

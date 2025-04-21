@@ -232,7 +232,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 p-4 shadow-sm">
       <div className="flex items-center mb-8 px-2">
-        <div className="bg-blue-400 rounded-full p-2">
+        <div className="bg-[hsl(181,76%,55%)] rounded-full p-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6 text-white"
@@ -248,7 +248,7 @@ export default function Sidebar() {
             />
           </svg>
         </div>
-        <h1 className="text-xl font-bold ml-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-transparent bg-clip-text">iMe</h1>
+        <h1 className="text-xl font-bold ml-2 bg-gradient-to-r from-[hsl(181,76%,55%)] to-[hsl(181,76%,40%)] text-transparent bg-clip-text">iMe</h1>
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -366,6 +366,29 @@ export default function Sidebar() {
         >
           Discovery
         </NavItem>
+        
+        <div className="nav-item">
+          <a 
+            href="/timer"
+            className="flex items-center space-x-3 text-[hsl(181,76%,55%)]"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>Timer Demo</span>
+          </a>
+        </div>
       </nav>
 
       <div className="mt-auto pt-4 border-t border-gray-200">
