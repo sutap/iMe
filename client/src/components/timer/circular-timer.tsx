@@ -79,8 +79,9 @@ export function CircularTimer({
             cy={size / 2}
             r={radius}
             fill="transparent"
-            stroke="rgba(255, 255, 255, 0.2)"
+            stroke="rgba(255, 255, 255, 0.15)"
             strokeWidth={strokeWidth}
+            filter="blur(0.5px)"
           />
         </svg>
         
@@ -91,22 +92,28 @@ export function CircularTimer({
             cy={size / 2}
             r={radius}
             fill="transparent"
-            stroke="white"
+            stroke="url(#progressGradient)"
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={calculateProgress()}
             strokeLinecap="round"
           />
+          <defs>
+            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#4F46E5" />
+              <stop offset="100%" stopColor="#60A5FA" />
+            </linearGradient>
+          </defs>
         </svg>
         
         {/* Time display */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-white text-3xl font-bold">{formatTime(timeLeft)}</span>
+          <span className="text-white text-4xl font-medium tracking-wider">{formatTime(timeLeft)}</span>
           <button 
             onClick={toggleTimer}
-            className="mt-2 bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+            className="mt-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm shadow-lg rounded-full p-3 transition-all transform hover:scale-105"
           >
-            {isActive ? <Pause className="h-6 w-6 text-white" /> : <Play className="h-6 w-6 text-white" />}
+            {isActive ? <Pause className="h-7 w-7 text-white" /> : <Play className="h-7 w-7 text-white ml-0.5" />}
           </button>
         </div>
       </div>
