@@ -7,13 +7,13 @@ export default function MobileNav() {
   const currentPath = location === "/" ? "/" : `/${location.split("/")[1]}`;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10">
-      <div className="flex justify-between px-3 py-3">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10 shadow-md">
+      <div className="flex justify-between px-3 py-3.5">
         <Link href="/">
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/" ? "text-[hsl(100,40%,50%)]" : "text-gray-500"
+              currentPath === "/" ? "text-blue-600" : "text-gray-500"
             )}
           >
             <svg
@@ -38,7 +38,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/schedule" ? "text-[hsl(100,40%,50%)]" : "text-gray-500"
+              currentPath === "/schedule" ? "text-blue-600" : "text-gray-500"
             )}
           >
             <svg
@@ -63,7 +63,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/health" ? "text-[hsl(100,40%,50%)]" : "text-gray-500"
+              currentPath === "/health" ? "text-blue-600" : "text-gray-500"
             )}
           >
             <svg
@@ -88,7 +88,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/finance" ? "text-[hsl(100,40%,50%)]" : "text-gray-500"
+              currentPath === "/finance" ? "text-blue-600" : "text-gray-500"
             )}
           >
             <svg
@@ -113,7 +113,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/discovery" ? "text-[hsl(100,40%,50%)]" : "text-gray-500"
+              currentPath === "/discovery" ? "text-blue-600" : "text-gray-500"
             )}
           >
             <svg
@@ -138,7 +138,7 @@ export default function MobileNav() {
           <a
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              currentPath === "/theme-settings" ? "text-[hsl(100,40%,50%)]" : "text-gray-500"
+              currentPath === "/theme-settings" ? "text-blue-600" : "text-gray-500"
             )}
           >
             <Palette className="h-6 w-6" />
@@ -150,7 +150,7 @@ export default function MobileNav() {
             href="/timer"
             className={cn(
               "flex flex-col items-center justify-center flex-1",
-              "text-[hsl(100,40%,50%)]"
+              "text-blue-600"
             )}
           >
             <svg
