@@ -56,7 +56,7 @@ function Router() {
       )} />
       
       <ProtectedRoute path="/theme-settings" component={() => (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-[#f8f9fc]"><div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#e6e8d4' }}><div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: '#7d9b6f', borderTopColor: 'transparent' }}></div></div>}>
           <ThemeSettings />
         </Suspense>
       )} />
@@ -64,13 +64,13 @@ function Router() {
       {/* Public Routes */}
       <Route path="/auth" component={AuthPage} />
       <Route path="/app-store">
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-[#f8f9fc]"><div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#e6e8d4' }}><div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: '#7d9b6f', borderTopColor: 'transparent' }}></div></div>}>
           <AppStorePage />
         </Suspense>
       </Route>
 
       <Route path="/timer-demo">
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-blue-600 text-white"><div className="w-12 h-12 rounded-full border-4 border-white border-t-transparent animate-spin"></div></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#e6e8d4' }}><div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: '#7d9b6f', borderTopColor: 'transparent' }}></div></div>}>
           <TimerDemo />
         </Suspense>
       </Route>

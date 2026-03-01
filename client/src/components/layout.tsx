@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,7 @@ function MobileUserInfo() {
   const { user, isLoading, logoutMutation } = useAuth();
   
   if (isLoading) {
-    return null; // Don't show anything while loading on mobile
+    return null;
   }
   
   const initials = user?.displayName 
@@ -38,25 +38,23 @@ function MobileUserInfo() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="flex items-center cursor-pointer">
-          <Avatar className="h-8 w-8 border border-gray-200">
+          <Avatar className="h-8 w-8 border-2" style={{ borderColor: '#d4cfc2' }}>
             <AvatarImage src={user?.profilePicture || ''} alt={user?.displayName || user?.username} />
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback className="text-sm font-medium" style={{ backgroundColor: '#e8e4d9', color: '#5a7a50' }}>{initials}</AvatarFallback>
           </Avatar>
-          <span className="ml-2 text-sm font-medium text-gray-900">
-            {user?.displayName?.split(' ')[0] || user?.username || "User"}
-          </span>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent align="end" className="w-56 rounded-xl border-0 shadow-lg" style={{ backgroundColor: '#f0ede4' }}>
+        <DropdownMenuLabel className="text-sm" style={{ color: '#3d3d2e' }}>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator style={{ backgroundColor: '#d4cfc2' }} />
         <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
+          <Settings className="mr-2 h-4 w-4" style={{ color: '#8a8a72' }} />
           <span>Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator style={{ backgroundColor: '#d4cfc2' }} />
         <DropdownMenuItem 
-          className="text-red-600 cursor-pointer"
+          className="cursor-pointer"
+          style={{ color: '#c47a5a' }}
           onClick={handleLogout}
           disabled={logoutMutation.isPending}
         >
@@ -74,24 +72,20 @@ export default function Layout({ children }: LayoutProps) {
   const [pageTitle, setPageTitle] = useState("Dashboard");
 
   useEffect(() => {
-    // Set page title based on current route
     const path = location.split("/")[1] || "dashboard";
     setPageTitle(path.charAt(0).toUpperCase() + path.slice(1));
   }, [location]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Desktop Sidebar */}
+    <div className="flex h-screen" style={{ backgroundColor: '#e6e8d4' }}>
       <Sidebar />
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
-        {/* Mobile Header */}
         {isMobile && (
-          <header className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
+          <header className="p-4 sticky top-0 z-10" style={{ backgroundColor: '#e6e8d4' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="bg-blue-400 rounded-full p-2 mr-2">
+                <div className="rounded-xl p-2 mr-2" style={{ backgroundColor: '#7d9b6f' }}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 text-white"
@@ -107,27 +101,15 @@ export default function Layout({ children }: LayoutProps) {
                     />
                   </svg>
                 </div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-blue-500 to-indigo-600 text-transparent bg-clip-text">iMe</h1>
+                <h1 className="text-xl font-bold" style={{ color: '#3d3d2e' }}>iMe</h1>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 <button
                   type="button"
-                  className="p-1 rounded-full text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="p-2 rounded-xl transition-colors"
+                  style={{ color: '#8a8a72' }}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
+                  <Bell className="h-5 w-5" />
                 </button>
                 <MobileUserInfo />
               </div>
@@ -135,11 +117,9 @@ export default function Layout({ children }: LayoutProps) {
           </header>
         )}
 
-        {/* Content */}
         <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </main>
 
-      {/* Mobile Navigation */}
       {isMobile && <MobileNav />}
     </div>
   );

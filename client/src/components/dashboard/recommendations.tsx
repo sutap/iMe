@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Recommendation } from "@shared/schema";
+import { Heart, DollarSign, Search } from "lucide-react";
 
 interface RecommendationsProps {
   recommendations: Recommendation[];
@@ -12,41 +13,30 @@ export default function Recommendations({
   onFilterChange,
   activeFilter = "all",
 }: RecommendationsProps) {
+  const filters = [
+    { key: "all", label: "All" },
+    { key: "health", label: "Health" },
+    { key: "finance", label: "Finance" },
+  ];
+
   return (
     <div className="card mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-gray-900">Personalized Recommendations</h3>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => onFilterChange && onFilterChange("all")}
-            className={`px-2 py-1 text-xs font-medium rounded-md ${
-              activeFilter === "all"
-                ? "bg-indigo-50 text-primary"
-                : "text-gray-500 hover:bg-gray-100"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => onFilterChange && onFilterChange("health")}
-            className={`px-2 py-1 text-xs font-medium rounded-md ${
-              activeFilter === "health"
-                ? "bg-indigo-50 text-primary"
-                : "text-gray-500 hover:bg-gray-100"
-            }`}
-          >
-            Health
-          </button>
-          <button
-            onClick={() => onFilterChange && onFilterChange("finance")}
-            className={`px-2 py-1 text-xs font-medium rounded-md ${
-              activeFilter === "finance"
-                ? "bg-indigo-50 text-primary"
-                : "text-gray-500 hover:bg-gray-100"
-            }`}
-          >
-            Finance
-          </button>
+        <h3 className="font-semibold" style={{ color: '#3d3d2e' }}>Recommendations</h3>
+        <div className="flex space-x-1">
+          {filters.map((filter) => (
+            <button
+              key={filter.key}
+              onClick={() => onFilterChange && onFilterChange(filter.key)}
+              className="px-3 py-1 text-xs font-medium rounded-lg transition-colors"
+              style={{
+                backgroundColor: activeFilter === filter.key ? 'rgba(125, 155, 111, 0.15)' : 'transparent',
+                color: activeFilter === filter.key ? '#5a7a50' : '#8a8a72'
+              }}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -55,80 +45,43 @@ export default function Recommendations({
           recommendations.map((rec) => (
             <div
               key={rec.id}
-              className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-200"
+              className="rounded-xl overflow-hidden transition-shadow duration-200 hover:shadow-md"
+              style={{ backgroundColor: '#e6e8d4' }}
             >
-              <div className="aspect-w-16 aspect-h-9 bg-gray-100">
+              <div className="aspect-w-16 aspect-h-9">
                 <div
-                  className="w-full h-36 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${rec.imageUrl})`,
-                  }}
+                  className="w-full h-32 bg-cover bg-center rounded-t-xl"
+                  style={{ backgroundImage: `url(${rec.imageUrl})` }}
                 ></div>
               </div>
               <div className="p-4">
                 <div className="flex items-center mb-2">
                   <div
-                    className={`rounded-full p-1 ${
-                      rec.type === "health"
-                        ? "bg-indigo-100"
-                        : rec.type === "finance"
-                        ? "bg-amber-100"
-                        : "bg-blue-100"
-                    }`}
+                    className="rounded-lg p-1"
+                    style={{
+                      backgroundColor: rec.type === "health" ? 'rgba(125, 155, 111, 0.15)' : rec.type === "finance" ? 'rgba(196, 168, 130, 0.2)' : 'rgba(138, 138, 114, 0.15)'
+                    }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className={`h-4 w-4 ${
-                        rec.type === "health"
-                          ? "text-primary"
-                          : rec.type === "finance"
-                          ? "text-accent"
-                          : "text-blue-500"
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      {rec.type === "health" ? (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                        />
-                      ) : rec.type === "finance" ? (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      ) : (
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      )}
-                    </svg>
+                    {rec.type === "health" ? (
+                      <Heart className="h-3.5 w-3.5" style={{ color: '#5a7a50' }} />
+                    ) : rec.type === "finance" ? (
+                      <DollarSign className="h-3.5 w-3.5" style={{ color: '#c4a882' }} />
+                    ) : (
+                      <Search className="h-3.5 w-3.5" style={{ color: '#8a8a72' }} />
+                    )}
                   </div>
-                  <span
-                    className={`text-xs font-medium ml-1 ${
-                      rec.type === "health"
-                        ? "text-primary"
-                        : rec.type === "finance"
-                        ? "text-accent"
-                        : "text-blue-500"
-                    }`}
+                  <span className="text-xs font-medium ml-1.5"
+                    style={{
+                      color: rec.type === "health" ? '#5a7a50' : rec.type === "finance" ? '#c4a882' : '#8a8a72'
+                    }}
                   >
                     {rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
                   </span>
                 </div>
-                <h4 className="text-sm font-semibold mb-1">{rec.title}</h4>
-                <p className="text-xs text-gray-500 mb-3">{rec.description}</p>
+                <h4 className="text-sm font-semibold mb-1" style={{ color: '#3d3d2e' }}>{rec.title}</h4>
+                <p className="text-xs mb-3" style={{ color: '#8a8a72' }}>{rec.description}</p>
                 <Link href={rec.actionUrl || "#"}>
-                  <a className="text-xs font-medium text-primary hover:text-indigo-700">
+                  <a className="text-xs font-medium" style={{ color: '#7d9b6f' }}>
                     {rec.actionLabel || "View Details"} →
                   </a>
                 </Link>
@@ -136,7 +89,7 @@ export default function Recommendations({
             </div>
           ))
         ) : (
-          <div className="col-span-full p-6 text-center text-gray-500">
+          <div className="col-span-full p-6 text-center" style={{ color: '#8a8a72' }}>
             No recommendations found
           </div>
         )}

@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, isWeekend } from "date-fns";
+import { format, isToday } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
 import { useEvents } from "@/hooks/use-events";
 import EventForm from "@/components/schedule/event-form";
 import CalendarView from "@/components/schedule/calendar-view";
@@ -12,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Event } from "@shared/schema";
+import { Plus, ChevronRight } from "lucide-react";
 
 interface ScheduleProps {
   userId: number;
@@ -46,7 +46,6 @@ export default function Schedule({ userId }: ScheduleProps) {
     setIsEditEventOpen(false);
   };
 
-  // Filter events for selected date
   const selectedDateEvents = events.filter((event) => {
     const eventDate = new Date(event.startTime);
     return (
@@ -60,43 +59,30 @@ export default function Schedule({ userId }: ScheduleProps) {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
-          <p className="text-gray-600">Manage your events and appointments</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#3d3d2e' }}>Schedule</h1>
+          <p style={{ color: '#8a8a72' }}>Manage your events and appointments</p>
         </div>
-        <Button onClick={handleAddEvent} className="bg-primary hover:bg-primary/90">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+        <Button onClick={handleAddEvent} className="rounded-xl text-white border-0 hover:opacity-90" style={{ backgroundColor: '#7d9b6f' }}>
+          <Plus className="h-5 w-5 mr-2" />
           Add Event
         </Button>
       </div>
 
       <Tabs defaultValue="calendar" className="w-full" onValueChange={(v) => setView(v as "calendar" | "list")}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="list">List</TabsTrigger>
+        <TabsList className="mb-4 rounded-xl" style={{ backgroundColor: '#f0ede4' }}>
+          <TabsTrigger value="calendar" className="rounded-lg">Calendar</TabsTrigger>
+          <TabsTrigger value="list" className="rounded-lg">List</TabsTrigger>
         </TabsList>
         
         <TabsContent value="calendar" className="space-y-6">
           <div className="grid md:grid-cols-7 gap-6">
-            <Card className="md:col-span-5">
+            <Card className="md:col-span-5 border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
               <CardHeader>
-                <CardTitle>Calendar</CardTitle>
+                <CardTitle style={{ color: '#3d3d2e' }}>Calendar</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <Skeleton className="h-[400px] w-full" />
+                  <Skeleton className="h-[400px] w-full" style={{ backgroundColor: '#d8d5c8' }} />
                 ) : (
                   <CalendarView 
                     events={events} 
@@ -108,12 +94,12 @@ export default function Schedule({ userId }: ScheduleProps) {
               </CardContent>
             </Card>
 
-            <Card className="md:col-span-2">
+            <Card className="md:col-span-2 border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
               <CardHeader>
-                <CardTitle>
+                <CardTitle style={{ color: '#3d3d2e' }}>
                   {format(selectedDate, "MMMM d, yyyy")}
                   {isToday(selectedDate) && (
-                    <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                    <span className="ml-2 text-xs px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(125, 155, 111, 0.15)', color: '#5a7a50' }}>
                       Today
                     </span>
                   )}
@@ -123,17 +109,13 @@ export default function Schedule({ userId }: ScheduleProps) {
                 {isLoading ? (
                   <div className="space-y-3">
                     {Array(3).fill(0).map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
+                      <Skeleton key={i} className="h-16 w-full" style={{ backgroundColor: '#d8d5c8' }} />
                     ))}
                   </div>
                 ) : selectedDateEvents.length === 0 ? (
-                  <div className="text-center py-6 text-gray-500">
-                    <p>No events scheduled for this date</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-2"
-                      onClick={handleAddEvent}
-                    >
+                  <div className="text-center py-6" style={{ color: '#8a8a72' }}>
+                    <p>No events scheduled</p>
+                    <Button variant="outline" className="mt-2 rounded-xl" onClick={handleAddEvent}>
                       Add Event
                     </Button>
                   </div>
@@ -142,25 +124,26 @@ export default function Schedule({ userId }: ScheduleProps) {
                     {selectedDateEvents.map((event) => (
                       <div
                         key={event.id}
-                        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="p-3 rounded-xl cursor-pointer transition-colors"
+                        style={{ backgroundColor: 'rgba(125, 155, 111, 0.08)' }}
                         onClick={() => handleEventClick(event)}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{event.title}</span>
-                          <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            event.type === "work" ? "bg-primary" :
-                            event.type === "health" ? "bg-secondary" :
-                            "bg-blue-500"
-                          )}></div>
+                          <span className="font-medium" style={{ color: '#3d3d2e' }}>{event.title}</span>
+                          <div className="px-2 py-0.5 rounded-md text-[10px] font-medium"
+                            style={{
+                              backgroundColor: event.type === "work" ? 'rgba(125, 155, 111, 0.15)' : 'rgba(196, 168, 130, 0.2)',
+                              color: event.type === "work" ? '#5a7a50' : '#a08050'
+                            }}
+                          >
+                            {event.type || 'Event'}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm mt-1" style={{ color: '#8a8a72' }}>
                           {format(new Date(event.startTime), "h:mm a")} - {format(new Date(event.endTime), "h:mm a")}
                         </div>
                         {event.location && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {event.location}
-                          </div>
+                          <div className="text-xs mt-1" style={{ color: '#8a8a72' }}>{event.location}</div>
                         )}
                       </div>
                     ))}
@@ -172,15 +155,15 @@ export default function Schedule({ userId }: ScheduleProps) {
         </TabsContent>
         
         <TabsContent value="list">
-          <Card>
+          <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
             <CardHeader>
-              <CardTitle>Today's Schedule</CardTitle>
+              <CardTitle style={{ color: '#3d3d2e' }}>Today's Schedule</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-3">
                   {Array(3).fill(0).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                    <Skeleton key={i} className="h-16 w-full" style={{ backgroundColor: '#d8d5c8' }} />
                   ))}
                 </div>
               ) : (
@@ -189,50 +172,40 @@ export default function Schedule({ userId }: ScheduleProps) {
             </CardContent>
           </Card>
           
-          <Card className="mt-6">
+          <Card className="mt-6 border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
             <CardHeader>
-              <CardTitle>Upcoming Events</CardTitle>
+              <CardTitle style={{ color: '#3d3d2e' }}>Upcoming Events</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-3">
                   {Array(5).fill(0).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                    <Skeleton key={i} className="h-16 w-full" style={{ backgroundColor: '#d8d5c8' }} />
                   ))}
                 </div>
               ) : events.length === 0 ? (
-                <div className="text-center py-6 text-gray-500">
+                <div className="text-center py-6" style={{ color: '#8a8a72' }}>
                   <p>No upcoming events</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-2"
-                    onClick={handleAddEvent}
-                  >
-                    Add Event
-                  </Button>
+                  <Button variant="outline" className="mt-2 rounded-xl" onClick={handleAddEvent}>Add Event</Button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {events.slice(0, 10).map((event) => (
                     <div
                       key={event.id}
-                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="p-3 rounded-xl cursor-pointer transition-colors"
+                      style={{ backgroundColor: 'rgba(125, 155, 111, 0.08)' }}
                       onClick={() => handleEventClick(event)}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">{event.title}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="font-medium" style={{ color: '#3d3d2e' }}>{event.title}</span>
+                        <span className="text-xs" style={{ color: '#8a8a72' }}>
                           {format(new Date(event.startTime), "MMM d")}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">
+                      <div className="text-sm mt-1" style={{ color: '#8a8a72' }}>
                         {format(new Date(event.startTime), "h:mm a")} - {format(new Date(event.endTime), "h:mm a")}
                       </div>
-                      {event.location && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {event.location}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -242,20 +215,16 @@ export default function Schedule({ userId }: ScheduleProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Add Event Dialog */}
       <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] rounded-2xl border-0" style={{ backgroundColor: '#f0ede4' }}>
           <DialogHeader>
-            <DialogTitle>Add New Event</DialogTitle>
+            <DialogTitle style={{ color: '#3d3d2e' }}>Add New Event</DialogTitle>
           </DialogHeader>
           <EventForm
             userId={userId}
             defaultDate={selectedDate}
             onSubmit={(eventData) => {
-              createEvent({
-                ...eventData,
-                userId,
-              });
+              createEvent({ ...eventData, userId });
               setIsAddEventOpen(false);
             }}
             onCancel={() => setIsAddEventOpen(false)}
@@ -263,27 +232,20 @@ export default function Schedule({ userId }: ScheduleProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Event Dialog */}
       <Dialog open={isEditEventOpen} onOpenChange={setIsEditEventOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] rounded-2xl border-0" style={{ backgroundColor: '#f0ede4' }}>
           <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
+            <DialogTitle style={{ color: '#3d3d2e' }}>Edit Event</DialogTitle>
           </DialogHeader>
           {selectedEvent && (
             <EventForm
               userId={userId}
               event={selectedEvent}
               onSubmit={(eventData) => {
-                if (selectedEvent) {
-                  handleUpdateEvent(selectedEvent.id, eventData);
-                }
+                if (selectedEvent) handleUpdateEvent(selectedEvent.id, eventData);
               }}
               onCancel={() => setIsEditEventOpen(false)}
-              onDelete={() => {
-                if (selectedEvent) {
-                  handleDeleteEvent(selectedEvent.id);
-                }
-              }}
+              onDelete={() => { if (selectedEvent) handleDeleteEvent(selectedEvent.id); }}
             />
           )}
         </DialogContent>

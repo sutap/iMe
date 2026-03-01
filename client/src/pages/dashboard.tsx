@@ -16,6 +16,8 @@ import { useRecommendations } from "@/hooks/use-recommendations";
 import { DashboardStats } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Calendar, Footprints, DollarSign, Search, Plus, Droplets } from "lucide-react";
 
 interface DashboardProps {
   userId: number;
@@ -23,35 +25,28 @@ interface DashboardProps {
 
 export default function Dashboard({ userId }: DashboardProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [healthTimeframe, setHealthTimeframe] = useState<"week" | "month" | "year">("week");
   const [financeTimeframe, setFinanceTimeframe] = useState<"week" | "month" | "year">("week");
   const [recommendationFilter, setRecommendationFilter] = useState<string>("all");
   const [healthDialogOpen, setHealthDialogOpen] = useState(false);
 
-  // Fetch dashboard stats
   const { data: dashboardStats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
     queryKey: [`/api/dashboard/${userId}`],
     enabled: !!userId,
   });
 
-  // Fetch module data
   const { todayEvents } = useEvents(userId);
   const { healthMetrics, createHealthMetric } = useHealth(userId);
   const { transactions } = useFinance(userId);
   const { recommendations } = useRecommendations(userId);
-  
-  // Health chart data
   const { data: weeklyHealthData, isLoading: isLoadingHealthData } = useHealth(userId).getWeeklyHealth();
-  
-  // Finance chart data
   const { data: weeklyFinanceData, isLoading: isLoadingFinanceData } = useFinance(userId).getWeeklyTransactions();
 
-  // Filter recommendations
   const filteredRecommendations = recommendationFilter === "all" 
     ? recommendations 
     : recommendations.filter(rec => rec.type === recommendationFilter);
 
-  // Handle health log submission
   const handleHealthLogSubmit = (data: { steps: number, water: number, sleep: number }) => {
     createHealthMetric({
       userId,
@@ -61,7 +56,6 @@ export default function Dashboard({ userId }: DashboardProps) {
       sleepHours: data.sleep,
       notes: ""
     });
-    
     setHealthDialogOpen(false);
     toast({
       title: "Health data logged",
@@ -70,200 +64,98 @@ export default function Dashboard({ userId }: DashboardProps) {
     });
   };
 
+  const displayName = user?.displayName?.split(' ')[0] || user?.username || 'Alex';
+
   return (
     <>
-      {/* Welcome Section */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Hello, Alex!</h1>
-        <p className="text-gray-600">Here's your daily summary - {format(new Date(), "EEEE, MMMM d")}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: '#3d3d2e' }}>
+              Good morning, {displayName}
+            </h1>
+            <p className="text-sm mt-1" style={{ color: '#8a8a72' }}>
+              {format(new Date(), "EEEE, MMMM d")}
+            </p>
+          </div>
+          <button className="p-2 rounded-xl" style={{ backgroundColor: '#f0ede4', color: '#7d9b6f' }}>
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {isLoadingStats ? (
-          // Loading skeletons
           Array(4).fill(0).map((_, i) => (
             <div key={i} className="card">
-              <div className="flex items-start justify-between">
-                <div>
-                  <Skeleton className="h-4 w-24 mb-2" />
-                  <Skeleton className="h-6 w-16" />
-                </div>
-                <Skeleton className="h-12 w-12 rounded-lg" />
-              </div>
-              <div className="mt-2">
-                <Skeleton className="h-4 w-32" />
-              </div>
+              <Skeleton className="h-4 w-20 mb-2" style={{ backgroundColor: '#d8d5c8' }} />
+              <Skeleton className="h-6 w-14" style={{ backgroundColor: '#d8d5c8' }} />
             </div>
           ))
         ) : (
-          // Stats cards
           <>
             <StatCard
-              title="Today's Events"
-              value={`${dashboardStats?.todayEventsCount || 0} events`}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              }
-              iconBg="bg-indigo-100"
-              trend={
-                dashboardStats?.nextEvent
-                  ? {
-                      direction: "up",
-                      label: `Next: ${format(
-                        new Date(dashboardStats.nextEvent.startTime),
-                        "h:mm a"
-                      )} ${dashboardStats.nextEvent.title}`,
-                    }
-                  : undefined
-              }
+              title="Events"
+              value={`${dashboardStats?.todayEventsCount || 0}`}
+              icon={<Calendar className="h-5 w-5" style={{ color: '#7d9b6f' }} />}
+              iconBg=""
+              trend={dashboardStats?.nextEvent ? {
+                direction: "up",
+                label: `Next: ${format(new Date(dashboardStats.nextEvent.startTime), "h:mm a")}`,
+              } : undefined}
             />
-
             <StatCard
-              title="Steps Today"
+              title="Steps"
               value={dashboardStats?.stepsToday.toLocaleString() || "0"}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-secondary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-              }
-              iconBg="bg-green-100"
+              icon={<Footprints className="h-5 w-5" style={{ color: '#5a7a50' }} />}
+              iconBg=""
               trend={{
                 direction: "neutral",
-                label: `${Math.round((dashboardStats?.stepsToday || 0) / (dashboardStats?.stepsGoal || 1) * 100)}% of daily goal`,
+                label: `${Math.round((dashboardStats?.stepsToday || 0) / (dashboardStats?.stepsGoal || 1) * 100)}% goal`,
               }}
             />
-
             <StatCard
-              title="July Expenses"
-              value={`$${dashboardStats?.expenseThisMonth.toFixed(2) || "0.00"}`}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-accent"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              }
-              iconBg="bg-amber-100"
+              title="Expenses"
+              value={`$${dashboardStats?.expenseThisMonth.toFixed(0) || "0"}`}
+              icon={<DollarSign className="h-5 w-5" style={{ color: '#c4a882' }} />}
+              iconBg=""
               trend={{
                 direction: "up",
-                label: `${Math.round(100 - ((dashboardStats?.expenseThisMonth || 0) / (dashboardStats?.budgetThisMonth || 1) * 100))}% under budget`,
+                label: `${Math.round(100 - ((dashboardStats?.expenseThisMonth || 0) / (dashboardStats?.budgetThisMonth || 1) * 100))}% under`,
               }}
             />
-
             <StatCard
-              title="New Recommendations"
-              value={`${dashboardStats?.recommendationsCount || 0} items`}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-blue-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              }
-              iconBg="bg-blue-100"
-              trend={{
-                direction: "up",
-                label: "Based on recent activity",
-              }}
+              title="Tips"
+              value={`${dashboardStats?.recommendationsCount || 0}`}
+              icon={<Search className="h-5 w-5" style={{ color: '#8a8a72' }} />}
+              iconBg=""
+              trend={{ direction: "up", label: "New for you" }}
             />
           </>
         )}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Health Trends Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {isLoadingHealthData ? (
           <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <Skeleton className="h-5 w-24" />
-              <div className="flex space-x-2">
-                <Skeleton className="h-6 w-12" />
-                <Skeleton className="h-6 w-12" />
-                <Skeleton className="h-6 w-12" />
-              </div>
-            </div>
-            <Skeleton className="h-[220px] w-full" />
+            <Skeleton className="h-5 w-24 mb-4" style={{ backgroundColor: '#d8d5c8' }} />
+            <Skeleton className="h-[180px] w-full" style={{ backgroundColor: '#d8d5c8' }} />
           </div>
         ) : (
-          <HealthChart
-            data={weeklyHealthData || []}
-            timeframe={healthTimeframe}
-            onTimeframeChange={setHealthTimeframe}
-          />
+          <HealthChart data={weeklyHealthData || []} timeframe={healthTimeframe} onTimeframeChange={setHealthTimeframe} />
         )}
-
-        {/* Finance Chart */}
         {isLoadingFinanceData ? (
           <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <Skeleton className="h-5 w-24" />
-              <div className="flex space-x-2">
-                <Skeleton className="h-6 w-12" />
-                <Skeleton className="h-6 w-12" />
-                <Skeleton className="h-6 w-12" />
-              </div>
-            </div>
-            <Skeleton className="h-[220px] w-full" />
+            <Skeleton className="h-5 w-24 mb-4" style={{ backgroundColor: '#d8d5c8' }} />
+            <Skeleton className="h-[180px] w-full" style={{ backgroundColor: '#d8d5c8' }} />
           </div>
         ) : (
-          <FinanceChart
-            data={weeklyFinanceData || []}
-            timeframe={financeTimeframe}
-            onTimeframeChange={setFinanceTimeframe}
-          />
+          <FinanceChart data={weeklyFinanceData || []} timeframe={financeTimeframe} onTimeframeChange={setFinanceTimeframe} />
         )}
       </div>
 
-      {/* Upcoming Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Schedule Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <ScheduleList events={todayEvents} />
-
-        {/* Health Section */}
         <HealthTracker
           metric={{
             steps: dashboardStats?.stepsToday || 0,
@@ -275,58 +167,51 @@ export default function Dashboard({ userId }: DashboardProps) {
           }}
           onLogActivity={() => setHealthDialogOpen(true)}
         />
-
-        {/* Finance Section */}
         <TransactionsList transactions={transactions.slice(0, 3)} />
       </div>
 
-      {/* Recommendations Section */}
       <Recommendations
         recommendations={filteredRecommendations}
         onFilterChange={setRecommendationFilter}
         activeFilter={recommendationFilter}
       />
 
-      {/* Health Log Dialog */}
       <Dialog open={healthDialogOpen} onOpenChange={setHealthDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl border-0" style={{ backgroundColor: '#f0ede4' }}>
           <DialogHeader>
-            <DialogTitle>Log Health Activity</DialogTitle>
-            <DialogDescription>
+            <DialogTitle style={{ color: '#3d3d2e' }}>Log Health Activity</DialogTitle>
+            <DialogDescription style={{ color: '#8a8a72' }}>
               Update your health metrics for today
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium">
-                Steps
-              </label>
+              <label className="text-right text-sm font-medium" style={{ color: '#5a5a48' }}>Steps</label>
               <input
                 type="number"
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="col-span-3 flex h-10 w-full rounded-xl border-0 px-3 py-2 text-sm"
+                style={{ backgroundColor: '#e6e8d4', color: '#3d3d2e' }}
                 defaultValue={dashboardStats?.stepsToday || 0}
                 id="steps"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium">
-                Water (glasses)
-              </label>
+              <label className="text-right text-sm font-medium" style={{ color: '#5a5a48' }}>Water</label>
               <input
                 type="number"
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="col-span-3 flex h-10 w-full rounded-xl border-0 px-3 py-2 text-sm"
+                style={{ backgroundColor: '#e6e8d4', color: '#3d3d2e' }}
                 defaultValue={dashboardStats?.waterIntake || 0}
                 id="water"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label className="text-right text-sm font-medium">
-                Sleep (hours)
-              </label>
+              <label className="text-right text-sm font-medium" style={{ color: '#5a5a48' }}>Sleep</label>
               <input
                 type="number"
                 step="0.1"
-                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="col-span-3 flex h-10 w-full rounded-xl border-0 px-3 py-2 text-sm"
+                style={{ backgroundColor: '#e6e8d4', color: '#3d3d2e' }}
                 defaultValue={dashboardStats?.sleepHours || 0}
                 id="sleep"
               />
@@ -334,18 +219,19 @@ export default function Dashboard({ userId }: DashboardProps) {
           </div>
           <div className="flex justify-end gap-2">
             <button
-              className="px-4 py-2 text-sm font-medium bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              className="px-4 py-2 text-sm font-medium rounded-xl transition-colors duration-200"
+              style={{ backgroundColor: '#e6e8d4', color: '#5a5a48' }}
               onClick={() => setHealthDialogOpen(false)}
             >
               Cancel
             </button>
             <button
-              className="px-4 py-2 text-sm font-medium text-white bg-secondary rounded-lg hover:bg-green-600 transition-colors duration-200"
+              className="px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors duration-200 hover:opacity-90"
+              style={{ backgroundColor: '#7d9b6f' }}
               onClick={() => {
                 const stepsEl = document.getElementById('steps') as HTMLInputElement;
                 const waterEl = document.getElementById('water') as HTMLInputElement;
                 const sleepEl = document.getElementById('sleep') as HTMLInputElement;
-                
                 handleHealthLogSubmit({
                   steps: parseInt(stepsEl.value),
                   water: parseInt(waterEl.value),

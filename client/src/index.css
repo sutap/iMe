@@ -8,10 +8,11 @@
   }
 
   body {
-    @apply font-sans antialiased bg-[#f8f9fc] text-slate-800;
+    @apply font-sans antialiased;
+    background-color: #e6e8d4;
+    color: #3d3d2e;
   }
   
-  /* Accessibility Styles */
   body.accessibility-mode {
     @apply transition-all duration-300;
   }
@@ -48,7 +49,6 @@
     @apply bg-green-900 text-white;
   }
   
-  /* Font Size Adjustments */
   body.font-size-large {
     font-size: 1.15rem;
   }
@@ -90,20 +90,39 @@
 
 @layer components {
   .sidebar-icon {
-    @apply h-6 w-6 text-gray-500 group-hover:text-primary transition-colors duration-200;
+    @apply h-6 w-6 transition-colors duration-200;
+    color: #8a8a72;
   }
+  
+  .sidebar-icon.active,
+  .group:hover .sidebar-icon {
+    color: #5a7a50;
+  }
+
   .card {
-    @apply bg-white rounded-xl shadow-md p-5 border-0;
+    @apply rounded-2xl p-5 border-0;
+    background-color: #f0ede4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
+
   .nav-item {
-    @apply flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-100 transition-all duration-200;
+    @apply flex items-center space-x-3 p-3 rounded-xl transition-all duration-200;
   }
+  
+  .nav-item:hover {
+    background-color: rgba(125, 155, 111, 0.1);
+  }
+
   .nav-item.active {
-    @apply bg-blue-50 text-primary font-medium;
+    background-color: rgba(125, 155, 111, 0.15);
+    color: #5a7a50;
+    font-weight: 500;
   }
+
   .nav-item.active .sidebar-icon {
-    @apply text-primary;
+    color: #5a7a50;
   }
+
   .chart-container {
     position: relative;
     height: 220px;
@@ -115,9 +134,9 @@
     }
   }
   
-  /* Accessibility Focus Styles */
   .accessibility-mode :focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 !important;
+    @apply outline-2 outline-offset-2 !important;
+    outline-color: #7d9b6f;
   }
   
   .accessibility-mode button:focus-visible,
@@ -125,6 +144,7 @@
   .accessibility-mode input:focus-visible,
   .accessibility-mode select:focus-visible,
   .accessibility-mode textarea:focus-visible {
-    @apply ring-2 ring-blue-500 ring-offset-2 !important;
+    @apply ring-2 ring-offset-2 !important;
+    --tw-ring-color: #7d9b6f;
   }
 }

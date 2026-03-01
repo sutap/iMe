@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import Recommendations from "@/components/dashboard/recommendations";
+import { Heart, DollarSign, Lightbulb } from "lucide-react";
 
 interface DiscoveryProps {
   userId: number;
@@ -14,57 +15,27 @@ export default function Discovery({ userId }: DiscoveryProps) {
   const [recommendationFilter, setRecommendationFilter] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
-  const { 
-    recommendations, 
-    newRecommendations, 
-    isLoading, 
-    markViewed 
-  } = useRecommendations(userId);
+  const { recommendations, newRecommendations, isLoading, markViewed } = useRecommendations(userId);
   
-  const handleViewRecommendation = (id: number) => {
-    markViewed(id);
-  };
+  const handleViewRecommendation = (id: number) => { markViewed(id); };
 
-  // Filter recommendations based on selected category
   const filteredRecommendations = selectedCategory 
     ? recommendations.filter(rec => rec.type === selectedCategory)
-    : recommendationFilter === "all" 
-      ? recommendations 
-      : recommendations.filter(rec => rec.type === recommendationFilter);
+    : recommendationFilter === "all" ? recommendations : recommendations.filter(rec => rec.type === recommendationFilter);
 
-  // Get unique recommendation types for filter
-  const getUniqueTypes = () => {
-    const types = recommendations.map(rec => rec.type);
-    return Array.from(new Set(types));
-  };
-
-  const uniqueTypes = getUniqueTypes();
+  const uniqueTypes = Array.from(new Set(recommendations.map(rec => rec.type)));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Discovery</h1>
-          <p className="text-gray-600">Find personalized recommendations based on your activities</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#3d3d2e' }}>Discover</h1>
+          <p style={{ color: '#8a8a72' }}>Personalized recommendations based on your activities</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant={selectedCategory === null ? "default" : "outline"}
-            onClick={() => setSelectedCategory(null)}
-          >
-            All
-          </Button>
+          <Button variant={selectedCategory === null ? "default" : "outline"} className="rounded-xl" onClick={() => setSelectedCategory(null)}>All</Button>
           {uniqueTypes.map(type => (
-            <Button
-              key={type}
-              variant={selectedCategory === type ? "default" : "outline"}
-              onClick={() => setSelectedCategory(type)}
-              className={
-                type === "health" ? "bg-primary/10 text-primary border-primary/20" :
-                type === "finance" ? "bg-amber-100 text-amber-700 border-amber-200" :
-                "bg-blue-100 text-blue-700 border-blue-200"
-              }
-            >
+            <Button key={type} variant={selectedCategory === type ? "default" : "outline"} className="rounded-xl" onClick={() => setSelectedCategory(type)}>
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </Button>
           ))}
@@ -72,12 +43,12 @@ export default function Discovery({ userId }: DiscoveryProps) {
       </div>
 
       <Tabs defaultValue="recommendations">
-        <TabsList className="mb-4">
-          <TabsTrigger value="recommendations">All Recommendations</TabsTrigger>
-          <TabsTrigger value="new">
+        <TabsList className="mb-4 rounded-xl" style={{ backgroundColor: '#f0ede4' }}>
+          <TabsTrigger value="recommendations" className="rounded-lg">All</TabsTrigger>
+          <TabsTrigger value="new" className="rounded-lg">
             New
             {newRecommendations.length > 0 && (
-              <span className="ml-2 bg-primary text-white text-xs px-2 py-0.5 rounded-full">
+              <span className="ml-2 text-white text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#7d9b6f' }}>
                 {newRecommendations.length}
               </span>
             )}
@@ -87,137 +58,56 @@ export default function Discovery({ userId }: DiscoveryProps) {
         <TabsContent value="recommendations">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array(6).fill(0).map((_, i) => (
-                <Skeleton key={i} className="h-64 w-full rounded-lg" />
-              ))}
+              {Array(6).fill(0).map((_, i) => (<Skeleton key={i} className="h-64 w-full rounded-2xl" style={{ backgroundColor: '#d8d5c8' }} />))}
             </div>
           ) : filteredRecommendations.length === 0 ? (
-            <Card>
+            <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
               <CardContent className="text-center py-12">
-                <p className="text-gray-500 mb-2">No recommendations available</p>
-                <p className="text-sm text-gray-400">
-                  As you use the app more, we'll provide personalized recommendations based on your activities
-                </p>
+                <p style={{ color: '#8a8a72' }}>No recommendations available yet</p>
+                <p className="text-sm mt-1" style={{ color: '#a8a892' }}>Keep using the app for personalized suggestions</p>
               </CardContent>
             </Card>
           ) : (
-            <Recommendations
-              recommendations={filteredRecommendations}
-              onFilterChange={setRecommendationFilter}
-              activeFilter={recommendationFilter}
-            />
+            <Recommendations recommendations={filteredRecommendations} onFilterChange={setRecommendationFilter} activeFilter={recommendationFilter} />
           )}
         </TabsContent>
         
         <TabsContent value="new">
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array(3).fill(0).map((_, i) => (
-                <Skeleton key={i} className="h-64 w-full rounded-lg" />
-              ))}
+              {Array(3).fill(0).map((_, i) => (<Skeleton key={i} className="h-64 w-full rounded-2xl" style={{ backgroundColor: '#d8d5c8' }} />))}
             </div>
           ) : newRecommendations.length === 0 ? (
-            <Card>
+            <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
               <CardContent className="text-center py-12">
-                <p className="text-gray-500">You're all caught up!</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Check back later for new recommendations
-                </p>
+                <p style={{ color: '#8a8a72' }}>You're all caught up!</p>
+                <p className="text-sm mt-2" style={{ color: '#a8a892' }}>Check back later for new recommendations</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {newRecommendations.map((rec) => (
-                <Card key={rec.id} className="overflow-hidden hover:shadow-md transition-shadow duration-200">
-                  <div className="aspect-w-16 aspect-h-9 bg-gray-100">
-                    <div
-                      className="w-full h-36 bg-cover bg-center"
-                      style={{
-                        backgroundImage: `url(${rec.imageUrl})`,
-                      }}
-                    ></div>
-                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                      New
-                    </div>
+                <Card key={rec.id} className="overflow-hidden border-0 rounded-2xl hover:shadow-md transition-shadow" style={{ backgroundColor: '#f0ede4' }}>
+                  <div className="relative">
+                    <div className="w-full h-32 bg-cover bg-center rounded-t-2xl" style={{ backgroundImage: `url(${rec.imageUrl})` }}></div>
+                    <div className="absolute top-2 right-2 text-white text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#7d9b6f' }}>New</div>
                   </div>
                   <CardContent className="p-4">
                     <div className="flex items-center mb-2">
-                      <div
-                        className={`rounded-full p-1 ${
-                          rec.type === "health"
-                            ? "bg-indigo-100"
-                            : rec.type === "finance"
-                            ? "bg-amber-100"
-                            : "bg-blue-100"
-                        }`}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className={`h-4 w-4 ${
-                            rec.type === "health"
-                              ? "text-primary"
-                              : rec.type === "finance"
-                              ? "text-accent"
-                              : "text-blue-500"
-                          }`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          {rec.type === "health" ? (
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-                          ) : rec.type === "finance" ? (
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          ) : (
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                          )}
-                        </svg>
+                      <div className="rounded-lg p-1" style={{ backgroundColor: rec.type === "health" ? 'rgba(125, 155, 111, 0.15)' : 'rgba(196, 168, 130, 0.2)' }}>
+                        {rec.type === "health" ? <Heart className="h-3.5 w-3.5" style={{ color: '#5a7a50' }} /> : <DollarSign className="h-3.5 w-3.5" style={{ color: '#c4a882' }} />}
                       </div>
-                      <span
-                        className={`text-xs font-medium ml-1 ${
-                          rec.type === "health"
-                            ? "text-primary"
-                            : rec.type === "finance"
-                            ? "text-accent"
-                            : "text-blue-500"
-                        }`}
-                      >
+                      <span className="text-xs font-medium ml-1.5" style={{ color: rec.type === "health" ? '#5a7a50' : '#c4a882' }}>
                         {rec.type.charAt(0).toUpperCase() + rec.type.slice(1)}
                       </span>
                     </div>
-                    <h4 className="text-sm font-semibold mb-1">{rec.title}</h4>
-                    <p className="text-xs text-gray-500 mb-3">{rec.description}</p>
+                    <h4 className="text-sm font-semibold mb-1" style={{ color: '#3d3d2e' }}>{rec.title}</h4>
+                    <p className="text-xs mb-3" style={{ color: '#8a8a72' }}>{rec.description}</p>
                     <div className="flex justify-between items-center">
-                      <a 
-                        href={rec.actionUrl || "#"} 
-                        className="text-xs font-medium text-primary hover:text-indigo-700"
-                        onClick={() => handleViewRecommendation(rec.id)}
-                      >
+                      <a href={rec.actionUrl || "#"} className="text-xs font-medium" style={{ color: '#7d9b6f' }} onClick={() => handleViewRecommendation(rec.id)}>
                         {rec.actionLabel || "View Details"} →
                       </a>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 text-xs"
-                        onClick={() => handleViewRecommendation(rec.id)}
-                      >
-                        Mark as seen
-                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs rounded-lg" onClick={() => handleViewRecommendation(rec.id)}>Dismiss</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -227,46 +117,36 @@ export default function Discovery({ userId }: DiscoveryProps) {
         </TabsContent>
       </Tabs>
 
-      <Card>
+      <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
         <CardHeader>
-          <CardTitle>Personalized Insights</CardTitle>
+          <CardTitle style={{ color: '#3d3d2e' }}>Insights</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(125, 155, 111, 0.08)' }}>
               <div className="flex items-center mb-3">
-                <div className="bg-primary/10 p-2 rounded-full mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                <div className="p-2 rounded-xl mr-3" style={{ backgroundColor: 'rgba(125, 155, 111, 0.15)' }}>
+                  <Heart className="h-5 w-5" style={{ color: '#5a7a50' }} />
                 </div>
-                <h3 className="font-medium">Health Patterns</h3>
+                <h3 className="font-medium" style={{ color: '#3d3d2e' }}>Health Patterns</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
-                We've noticed you're most active on weekdays between 5-7 PM. 
-                This consistency helps maintain your fitness routine.
+              <p className="text-sm mb-3" style={{ color: '#8a8a72' }}>
+                You're most active on weekdays between 5-7 PM. Great consistency!
               </p>
-              <Button variant="outline" size="sm" className="text-primary border-primary/20">
-                View Health Details
-              </Button>
+              <Button variant="outline" size="sm" className="rounded-lg" style={{ color: '#5a7a50', borderColor: 'rgba(125, 155, 111, 0.3)' }}>View Health</Button>
             </div>
 
-            <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
+            <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(196, 168, 130, 0.1)' }}>
               <div className="flex items-center mb-3">
-                <div className="bg-amber-100 p-2 rounded-full mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <div className="p-2 rounded-xl mr-3" style={{ backgroundColor: 'rgba(196, 168, 130, 0.2)' }}>
+                  <DollarSign className="h-5 w-5" style={{ color: '#c4a882' }} />
                 </div>
-                <h3 className="font-medium">Spending Insights</h3>
+                <h3 className="font-medium" style={{ color: '#3d3d2e' }}>Spending Insights</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Your dining expenses have increased by 25% this month compared to last month.
-                Consider setting a budget alert.
+              <p className="text-sm mb-3" style={{ color: '#8a8a72' }}>
+                Dining expenses increased 25% this month. Consider a budget alert.
               </p>
-              <Button variant="outline" size="sm" className="text-amber-600 border-amber-200">
-                Review Finances
-              </Button>
+              <Button variant="outline" size="sm" className="rounded-lg" style={{ color: '#c4a882', borderColor: 'rgba(196, 168, 130, 0.3)' }}>Review</Button>
             </div>
           </div>
         </CardContent>
