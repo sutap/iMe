@@ -10,6 +10,16 @@ import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, parseISO, isTod
 import { db } from "./db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import session from "express-session";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 export interface IStorage {
   // Session storage
@@ -82,16 +92,19 @@ export class MemStorage implements IStorage {
     this.transactionCurrentId = 1;
     this.recommendationCurrentId = 1;
 
-    // Add demo user
+    this.initDemoUser();
+  }
+
+  private async initDemoUser() {
+    const hashedPassword = await hashPassword("demo123");
     this.createUser({
       username: "demo",
-      password: "demo123",
+      password: hashedPassword,
       displayName: "Alex Morgan",
       email: "alex@example.com"
+    }).then(() => {
+      this.seedInitialData(1);
     });
-
-    // Seed with initial data for testing
-    this.seedInitialData(1);
   }
 
   // User operations
