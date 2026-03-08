@@ -22,6 +22,7 @@ async function hashPassword(password: string) {
 }
 
 export interface IStorage {
+  ready: Promise<void>;
   // Session storage
   sessionStore?: session.Store;
 
@@ -92,19 +93,20 @@ export class MemStorage implements IStorage {
     this.transactionCurrentId = 1;
     this.recommendationCurrentId = 1;
 
-    this.initDemoUser();
+    this.ready = this.initDemoUser();
   }
+
+  ready: Promise<void>;
 
   private async initDemoUser() {
     const hashedPassword = await hashPassword("demo123");
-    this.createUser({
+    await this.createUser({
       username: "demo",
       password: hashedPassword,
       displayName: "Alex Morgan",
       email: "alex@example.com"
-    }).then(() => {
-      this.seedInitialData(1);
     });
+    await this.seedInitialData(1);
   }
 
   // User operations
@@ -483,6 +485,7 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  ready: Promise<void> = Promise.resolve();
   // Session store property
   sessionStore?: session.Store;
   
