@@ -21,6 +21,7 @@ import { AccessibilityToolbar } from "@/components/accessibility/accessibility-t
 const AppStorePage = React.lazy(() => import('@/pages/app-store-page'));
 const ThemeSettings = React.lazy(() => import('@/pages/theme-settings'));
 const TimerDemo = React.lazy(() => import('@/pages/timer-demo'));
+const Settings = React.lazy(() => import('@/pages/settings'));
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -53,6 +54,14 @@ function Router() {
         <Layout>
           <Discovery userId={userId} />
         </Layout>
+      )} />
+
+      <ProtectedRoute path="/settings" component={() => (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: '#e6e8d4' }}><div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: '#7d9b6f', borderTopColor: 'transparent' }}></div></div>}>
+          <Layout>
+            <Settings userId={userId} />
+          </Layout>
+        </Suspense>
       )} />
       
       <ProtectedRoute path="/theme-settings" component={() => (

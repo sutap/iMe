@@ -49,6 +49,16 @@
     @apply bg-green-900 text-white;
   }
   
+  .dark body, body.dark {
+    background-color: #1a1a14;
+    color: #e8e8d4;
+  }
+  
+  html.dark {
+    background-color: #1a1a14;
+    color-scheme: dark;
+  }
+  
   body.font-size-large {
     font-size: 1.15rem;
   }

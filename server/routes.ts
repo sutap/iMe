@@ -7,111 +7,82 @@ import {
   insertHealthMetricSchema, 
   insertTransactionSchema, 
   insertRecommendationSchema,
-  insertUserSchema 
+  insertGoalSchema,
+  insertBudgetCategorySchema,
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import fs from 'fs';
 import path from 'path';
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication system
   setupAuth(app);
   
-  // User endpoint to get user by ID
+  // User endpoints
   app.get("/api/users/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const user = await storage.getUser(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    
-    // Don't return the password in the response
+    if (!user) return res.status(404).json({ message: "User not found" });
     const { password, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
   });
   
-  // Update user profile picture
   app.put("/api/users/:userId/profile", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
-    const { profilePicture } = req.body;
-    if (!profilePicture) {
-      return res.status(400).json({ message: "Profile picture is required" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     try {
-      const updatedUser = await storage.updateUserProfile(userId, { profilePicture });
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Don't return the password in the response
+      const updatedUser = await storage.updateUserProfile(userId, req.body);
+      if (!updatedUser) return res.status(404).json({ message: "User not found" });
       const { password, ...userWithoutPassword } = updatedUser;
       res.json(userWithoutPassword);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update profile picture" });
+      res.status(500).json({ message: "Failed to update profile" });
     }
   });
 
-  // Dashboard endpoints
+  // Dashboard
   app.get("/api/dashboard/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const stats = await storage.getDashboardStats(userId);
     res.json(stats);
   });
 
-  // Events endpoints
+  // Events
   app.get("/api/events/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const events = await storage.getEvents(userId);
     res.json(events);
   });
   
   app.get("/api/events/:userId/today", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const events = await storage.getTodayEvents(userId);
     res.json(events);
   });
   
   app.get("/api/events/:userId/range", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const { start, end } = req.query;
-    if (!start || !end) {
-      return res.status(400).json({ message: "Start and end dates are required" });
-    }
-    
+    if (!start || !end) return res.status(400).json({ message: "Start and end dates are required" });
     try {
-      const startDate = new Date(start as string);
-      const endDate = new Date(end as string);
-      
-      const events = await storage.getEventsByDateRange(userId, startDate, endDate);
+      const events = await storage.getEventsByDateRange(userId, new Date(start as string), new Date(end as string));
       res.json(events);
     } catch (error) {
       res.status(400).json({ message: "Invalid date format" });
     }
+  });
+
+  app.get("/api/events/:userId/search", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    const { q } = req.query;
+    if (!q) return res.json([]);
+    const events = await storage.searchEvents(userId, q as string);
+    res.json(events);
   });
   
   app.post("/api/events", async (req, res) => {
@@ -120,24 +91,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const event = await storage.createEvent(eventData);
       res.status(201).json(event);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors });
-      }
+      if (error instanceof z.ZodError) return res.status(400).json({ message: error.errors });
       res.status(500).json({ message: "Failed to create event" });
     }
   });
   
   app.put("/api/events/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid event ID" });
-    }
-    
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid event ID" });
     try {
       const updatedEvent = await storage.updateEvent(id, req.body);
-      if (!updatedEvent) {
-        return res.status(404).json({ message: "Event not found" });
-      }
+      if (!updatedEvent) return res.status(404).json({ message: "Event not found" });
       res.json(updatedEvent);
     } catch (error) {
       res.status(500).json({ message: "Failed to update event" });
@@ -146,57 +110,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.delete("/api/events/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid event ID" });
-    }
-    
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid event ID" });
     const success = await storage.deleteEvent(id);
-    if (!success) {
-      return res.status(404).json({ message: "Event not found" });
-    }
+    if (!success) return res.status(404).json({ message: "Event not found" });
     res.status(204).end();
   });
 
-  // Health metrics endpoints
+  // Health metrics
   app.get("/api/health/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const metrics = await storage.getHealthMetrics(userId);
     res.json(metrics);
   });
   
   app.get("/api/health/:userId/today", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const metric = await storage.getTodayHealthMetric(userId);
-    if (!metric) {
-      return res.status(404).json({ message: "No health metric found for today" });
-    }
+    if (!metric) return res.status(404).json({ message: "No health metric found for today" });
     res.json(metric);
   });
   
   app.get("/api/health/:userId/range", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const { start, end } = req.query;
-    if (!start || !end) {
-      return res.status(400).json({ message: "Start and end dates are required" });
-    }
-    
+    if (!start || !end) return res.status(400).json({ message: "Start and end dates are required" });
     try {
-      const startDate = new Date(start as string);
-      const endDate = new Date(end as string);
-      
-      const metrics = await storage.getHealthMetricsByDateRange(userId, startDate, endDate);
+      const metrics = await storage.getHealthMetricsByDateRange(userId, new Date(start as string), new Date(end as string));
       res.json(metrics);
     } catch (error) {
       res.status(400).json({ message: "Invalid date format" });
@@ -209,61 +151,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const metric = await storage.createHealthMetric(metricData);
       res.status(201).json(metric);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors });
-      }
+      if (error instanceof z.ZodError) return res.status(400).json({ message: error.errors });
       res.status(500).json({ message: "Failed to create health metric" });
     }
   });
   
   app.put("/api/health/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid health metric ID" });
-    }
-    
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid health metric ID" });
     try {
       const updatedMetric = await storage.updateHealthMetric(id, req.body);
-      if (!updatedMetric) {
-        return res.status(404).json({ message: "Health metric not found" });
-      }
+      if (!updatedMetric) return res.status(404).json({ message: "Health metric not found" });
       res.json(updatedMetric);
     } catch (error) {
       res.status(500).json({ message: "Failed to update health metric" });
     }
   });
 
-  // Finance endpoints
+  // Goals
+  app.get("/api/goals/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    const goal = await storage.getGoals(userId);
+    if (!goal) return res.status(404).json({ message: "Goals not found" });
+    res.json(goal);
+  });
+
+  app.post("/api/goals", async (req, res) => {
+    try {
+      const goalData = insertGoalSchema.parse(req.body);
+      const goal = await storage.createGoals(goalData);
+      res.status(201).json(goal);
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ message: error.errors });
+      res.status(500).json({ message: "Failed to create goals" });
+    }
+  });
+
+  app.put("/api/goals/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    try {
+      const updatedGoal = await storage.updateGoals(userId, req.body);
+      if (!updatedGoal) return res.status(404).json({ message: "Goals not found" });
+      res.json(updatedGoal);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update goals" });
+    }
+  });
+
+  // Transactions
   app.get("/api/transactions/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const transactions = await storage.getTransactions(userId);
     res.json(transactions);
   });
   
   app.get("/api/transactions/:userId/range", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const { start, end } = req.query;
-    if (!start || !end) {
-      return res.status(400).json({ message: "Start and end dates are required" });
-    }
-    
+    if (!start || !end) return res.status(400).json({ message: "Start and end dates are required" });
     try {
-      const startDate = new Date(start as string);
-      const endDate = new Date(end as string);
-      
-      const transactions = await storage.getTransactionsByDateRange(userId, startDate, endDate);
+      const transactions = await storage.getTransactionsByDateRange(userId, new Date(start as string), new Date(end as string));
       res.json(transactions);
     } catch (error) {
       res.status(400).json({ message: "Invalid date format" });
     }
+  });
+
+  app.get("/api/transactions/:userId/search", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    const { q } = req.query;
+    if (!q) return res.json([]);
+    const transactions = await storage.searchTransactions(userId, q as string);
+    res.json(transactions);
   });
   
   app.post("/api/transactions", async (req, res) => {
@@ -272,24 +236,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transaction = await storage.createTransaction(transactionData);
       res.status(201).json(transaction);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors });
-      }
+      if (error instanceof z.ZodError) return res.status(400).json({ message: error.errors });
       res.status(500).json({ message: "Failed to create transaction" });
     }
   });
   
   app.put("/api/transactions/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid transaction ID" });
-    }
-    
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid transaction ID" });
     try {
       const updatedTransaction = await storage.updateTransaction(id, req.body);
-      if (!updatedTransaction) {
-        return res.status(404).json({ message: "Transaction not found" });
-      }
+      if (!updatedTransaction) return res.status(404).json({ message: "Transaction not found" });
       res.json(updatedTransaction);
     } catch (error) {
       res.status(500).json({ message: "Failed to update transaction" });
@@ -298,59 +255,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.delete("/api/transactions/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid transaction ID" });
-    }
-    
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid transaction ID" });
     const success = await storage.deleteTransaction(id);
-    if (!success) {
-      return res.status(404).json({ message: "Transaction not found" });
-    }
+    if (!success) return res.status(404).json({ message: "Transaction not found" });
     res.status(204).end();
   });
 
-  // Recommendations endpoints
+  // Budget Categories
+  app.get("/api/budget-categories/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    const categories = await storage.getBudgetCategories(userId);
+    res.json(categories);
+  });
+
+  app.post("/api/budget-categories", async (req, res) => {
+    try {
+      const categoryData = insertBudgetCategorySchema.parse(req.body);
+      const category = await storage.createBudgetCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ message: error.errors });
+      res.status(500).json({ message: "Failed to create budget category" });
+    }
+  });
+
+  app.put("/api/budget-categories/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid category ID" });
+    try {
+      const updated = await storage.updateBudgetCategory(id, req.body);
+      if (!updated) return res.status(404).json({ message: "Category not found" });
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/budget-categories/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid category ID" });
+    const success = await storage.deleteBudgetCategory(id);
+    if (!success) return res.status(404).json({ message: "Category not found" });
+    res.status(204).end();
+  });
+
+  // Recommendations
   app.get("/api/recommendations/:userId", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const recommendations = await storage.getRecommendations(userId);
     res.json(recommendations);
   });
   
   app.get("/api/recommendations/:userId/type/:type", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
-    const type = req.params.type;
-    const recommendations = await storage.getRecommendationsByType(userId, type);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    const recommendations = await storage.getRecommendationsByType(userId, req.params.type);
     res.json(recommendations);
   });
   
   app.get("/api/recommendations/:userId/new", async (req, res) => {
     const userId = parseInt(req.params.userId);
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
-    }
-    
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
     const recommendations = await storage.getNewRecommendations(userId);
+    res.json(recommendations);
+  });
+
+  app.get("/api/recommendations/:userId/search", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    const { q } = req.query;
+    if (!q) return res.json([]);
+    const recommendations = await storage.searchRecommendations(userId, q as string);
     res.json(recommendations);
   });
   
   app.post("/api/recommendations/view/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid recommendation ID" });
-    }
-    
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid recommendation ID" });
     const success = await storage.markRecommendationViewed(id);
-    if (!success) {
-      return res.status(404).json({ message: "Recommendation not found" });
-    }
+    if (!success) return res.status(404).json({ message: "Recommendation not found" });
     res.status(204).end();
   });
   
@@ -360,66 +345,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recommendation = await storage.createRecommendation(recommendationData);
       res.status(201).json(recommendation);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors });
-      }
+      if (error instanceof z.ZodError) return res.status(400).json({ message: error.errors });
       res.status(500).json({ message: "Failed to create recommendation" });
     }
   });
 
-  // Theme endpoint
+  // Global search
+  app.get("/api/search/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ message: "Invalid user ID" });
+    const { q } = req.query;
+    if (!q || (q as string).length < 2) return res.json({ events: [], transactions: [], recommendations: [] });
+    const [events, transactions, recommendations] = await Promise.all([
+      storage.searchEvents(userId, q as string),
+      storage.searchTransactions(userId, q as string),
+      storage.searchRecommendations(userId, q as string),
+    ]);
+    res.json({ events, transactions, recommendations });
+  });
+
+  // Theme
   app.post("/api/theme", async (req, res) => {
     try {
-      // Validate theme schema
       const themeSchema = z.object({
         variant: z.enum(['professional', 'tint', 'vibrant']),
         primary: z.string(),
         appearance: z.enum(['light', 'dark', 'system']),
         radius: z.number().min(0).max(2)
       });
-      
       const themeData = themeSchema.parse(req.body);
-      
-      // Update theme.json file
       const themePath = path.resolve('./theme.json');
-      
-      try {
-        fs.writeFileSync(themePath, JSON.stringify(themeData, null, 2));
-        res.status(200).json({ message: "Theme updated successfully" });
-      } catch (fileError) {
-        console.error('Error writing theme file:', fileError);
-        res.status(500).json({ message: "Failed to update theme file" });
-      }
+      fs.writeFileSync(themePath, JSON.stringify(themeData, null, 2));
+      res.status(200).json({ message: "Theme updated successfully" });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors });
-      }
+      if (error instanceof z.ZodError) return res.status(400).json({ message: error.errors });
       res.status(500).json({ message: "Failed to update theme" });
     }
   });
   
-  // Get current theme
   app.get("/api/theme", async (req, res) => {
     try {
       const themePath = path.resolve('./theme.json');
-      
-      if (!fs.existsSync(themePath)) {
-        return res.status(404).json({ message: "Theme file not found" });
-      }
-      
+      if (!fs.existsSync(themePath)) return res.status(404).json({ message: "Theme file not found" });
       const themeContent = fs.readFileSync(themePath, 'utf8');
-      const themeData = JSON.parse(themeContent);
-      
-      res.status(200).json(themeData);
+      res.status(200).json(JSON.parse(themeContent));
     } catch (error) {
-      console.error('Error reading theme file:', error);
       res.status(500).json({ message: "Failed to read theme file" });
     }
-  });
-  
-  // Special route for timer demo - no authentication required
-  app.get("/timer", (_req, res) => {
-    res.sendFile(path.resolve(process.cwd(), "client", "timer-demo.html"));
   });
 
   const httpServer = createServer(app);

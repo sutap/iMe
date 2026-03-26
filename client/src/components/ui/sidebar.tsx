@@ -224,8 +224,8 @@ export default function Sidebar() {
 
       <div className="mt-auto pt-4" style={{ borderTop: '1px solid #d4cfc2' }}>
         <NavItem
-          href="/theme-settings"
-          active={currentPath === "/theme-settings"}
+          href="/settings"
+          active={currentPath === "/settings"}
           icon={<Settings className="sidebar-icon" />}
         >
           Settings

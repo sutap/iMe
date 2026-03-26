@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useFinance } from "@/hooks/use-finance";
+import { useGoals } from "@/hooks/use-goals";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,197 +8,217 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import FinanceChart from "@/components/charts/finance-chart";
 import TransactionForm from "@/components/finance/transaction-form";
-import BudgetSummary from "@/components/finance/budget-summary";
 import TransactionsList from "@/components/dashboard/transactions-list";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Transaction } from "@shared/schema";
-import { Plus, TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownLeft, PiggyBank, Target } from "lucide-react";
+import { Link } from "wouter";
 
 interface FinanceProps {
   userId: number;
 }
 
+const C = { bg: '#e6e8d4', card: '#f0ede4', primary: '#7d9b6f', clay: '#c4a882', text: '#3d3d2e', muted: '#8a8a72', border: '#d8d5c8', income: '#5a7a50', expense: '#c47a5a' };
+
 export default function Finance({ userId }: FinanceProps) {
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [financeTimeframe, setFinanceTimeframe] = useState<"week" | "month" | "year">("week");
+  const [financeTimeframe, setFinanceTimeframe] = useState<"week" | "month">("week");
   const [tabView, setTabView] = useState("overview");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const { transactions, isLoading, createTransaction, updateTransaction, deleteTransaction } = useFinance(userId);
+  const { transactions, budgetCategories, isLoading, createTransaction, updateTransaction, deleteTransaction } = useFinance(userId);
+  const { goals } = useGoals(userId);
   const { data: weeklyTransactionsData, isLoading: isLoadingWeekly } = useFinance(userId).getWeeklyTransactions();
   const { data: monthlyTransactionsData, isLoading: isLoadingMonthly } = useFinance(userId).getMonthlyTransactions();
 
   const currentTimeframeData = financeTimeframe === "week" ? weeklyTransactionsData : monthlyTransactionsData;
 
-  const handleAddTransaction = () => { setSelectedTransaction(null); setIsAddTransactionOpen(true); };
   const handleTransactionClick = (transaction: Transaction) => { setSelectedTransaction(transaction); setIsEditTransactionOpen(true); };
   const handleDeleteTransaction = (id: number) => { deleteTransaction(id); setIsEditTransactionOpen(false); };
 
-  const calculateSummary = () => {
-    if (!transactions || transactions.length === 0) return { income: 0, expenses: 0, balance: 0 };
-    const income = transactions.filter(t => t.isIncome).reduce((s, t) => s + t.amount, 0);
-    const expenses = transactions.filter(t => !t.isIncome).reduce((s, t) => s + t.amount, 0);
-    return { income, expenses, balance: income - expenses };
-  };
+  const now = new Date();
+  const monthStart = startOfMonth(now);
+  const monthEnd = endOfMonth(now);
+  const monthTransactions = transactions.filter(t => {
+    const d = new Date(t.date);
+    return d >= monthStart && d <= monthEnd;
+  });
 
-  const summary = calculateSummary();
+  const summary = {
+    income: monthTransactions.filter(t => t.isIncome).reduce((s, t) => s + t.amount, 0),
+    expenses: monthTransactions.filter(t => !t.isIncome).reduce((s, t) => s + t.amount, 0),
+  };
+  const balance = summary.income - summary.expenses;
+  const monthlyBudget = goals?.monthlyBudget || 1500;
+  const savingsGoal = goals?.savingsGoal || 500;
+  const budgetUsedPct = Math.min((summary.expenses / monthlyBudget) * 100, 100);
 
   const getExpensesByCategory = () => {
-    if (!transactions) return {};
     const categories: Record<string, number> = {};
-    transactions.filter(t => !t.isIncome).forEach(t => { categories[t.category] = (categories[t.category] || 0) + t.amount; });
+    monthTransactions.filter(t => !t.isIncome).forEach(t => { categories[t.category] = (categories[t.category] || 0) + t.amount; });
     return categories;
   };
-
   const expensesByCategory = getExpensesByCategory();
 
+  const filteredTransactions = searchQuery
+    ? transactions.filter(t => t.description.toLowerCase().includes(searchQuery.toLowerCase()) || t.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    : transactions;
+
   const summaryCards = [
-    { title: "Income", value: summary.income, icon: TrendingUp, color: '#5a7a50' },
-    { title: "Expenses", value: summary.expenses, icon: TrendingDown, color: '#c47a5a' },
-    { title: "Balance", value: summary.balance, icon: Wallet, color: summary.balance >= 0 ? '#5a7a50' : '#c47a5a' },
+    { title: "Income", value: summary.income, icon: TrendingUp, color: C.income, sub: "this month" },
+    { title: "Expenses", value: summary.expenses, icon: TrendingDown, color: C.expense, sub: `of $${monthlyBudget} budget` },
+    { title: "Balance", value: balance, icon: Wallet, color: balance >= 0 ? C.income : C.expense, sub: balance >= 0 ? 'surplus' : 'deficit' },
+    { title: "Savings", value: Math.max(balance, 0), icon: PiggyBank, color: '#c4a882', sub: `goal: $${savingsGoal}` },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#3d3d2e' }}>Finance</h1>
-          <p style={{ color: '#8a8a72' }}>Monitor your income and expenses</p>
+          <h1 className="text-2xl font-bold" style={{ color: C.text }}>Finance</h1>
+          <p className="text-sm" style={{ color: C.muted }}>Track income, expenses & budgets</p>
         </div>
-        <Button onClick={handleAddTransaction} className="rounded-xl text-white border-0 hover:opacity-90" style={{ backgroundColor: '#c4a882' }}>
-          <Plus className="h-5 w-5 mr-2" />
-          Add Transaction
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/settings">
+            <Button variant="outline" size="sm" className="rounded-xl border-0" style={{ backgroundColor: C.card, color: C.muted }}>
+              <Target className="h-4 w-4 mr-1" /> Budget
+            </Button>
+          </Link>
+          <Button onClick={() => { setSelectedTransaction(null); setIsAddTransactionOpen(true); }} className="rounded-xl text-white border-0" style={{ backgroundColor: C.clay }}>
+            <Plus className="h-4 w-4 mr-2" /> Add Transaction
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {summaryCards.map((card) => (
-          <Card key={card.title} className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center">
-                <card.icon className="h-6 w-6 mb-2" style={{ color: card.color }} />
-                <div className="text-3xl font-bold" style={{ color: card.color }}>
-                  {isLoading ? <Skeleton className="h-10 w-24" style={{ backgroundColor: '#d8d5c8' }} /> : `$${card.value.toFixed(2)}`}
-                </div>
-                <div className="text-sm mt-1" style={{ color: '#8a8a72' }}>{card.title.toLowerCase()}</div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {summaryCards.map(card => (
+          <Card key={card.title} className="border-0 rounded-2xl" style={{ backgroundColor: C.card }}>
+            <CardContent className="p-4">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2" style={{ backgroundColor: `${card.color}20` }}>
+                <card.icon className="h-4 w-4" style={{ color: card.color }} />
               </div>
+              {isLoading ? (
+                <Skeleton className="h-7 w-20 mb-1" style={{ backgroundColor: C.border }} />
+              ) : (
+                <div className="text-xl font-bold" style={{ color: card.color }}>${Math.abs(card.value).toFixed(0)}</div>
+              )}
+              <div className="text-xs" style={{ color: C.muted }}>{card.title} · {card.sub}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Tabs defaultValue="overview" onValueChange={setTabView}>
-        <TabsList className="mb-4 rounded-xl" style={{ backgroundColor: '#f0ede4' }}>
+      {/* Monthly Budget Bar */}
+      <Card className="border-0 rounded-2xl" style={{ backgroundColor: C.card }}>
+        <CardContent className="p-4">
+          <div className="flex justify-between mb-2">
+            <span className="text-sm font-medium" style={{ color: C.text }}>Monthly Budget</span>
+            <span className="text-sm font-semibold" style={{ color: budgetUsedPct > 90 ? C.expense : C.text }}>
+              ${summary.expenses.toFixed(0)} / ${monthlyBudget}
+            </span>
+          </div>
+          <div className="w-full rounded-full h-3" style={{ backgroundColor: C.border }}>
+            <div className="h-3 rounded-full transition-all duration-500" style={{ 
+              width: `${budgetUsedPct}%`, 
+              backgroundColor: budgetUsedPct > 90 ? C.expense : budgetUsedPct > 75 ? '#c4a882' : C.income 
+            }} />
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="text-xs" style={{ color: C.muted }}>{budgetUsedPct.toFixed(0)}% used</span>
+            <span className="text-xs" style={{ color: C.muted }}>${Math.max(monthlyBudget - summary.expenses, 0).toFixed(0)} remaining</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs value={tabView} onValueChange={setTabView}>
+        <TabsList className="mb-4 rounded-xl" style={{ backgroundColor: C.card }}>
           <TabsTrigger value="overview" className="rounded-lg">Overview</TabsTrigger>
           <TabsTrigger value="transactions" className="rounded-lg">Transactions</TabsTrigger>
-          <TabsTrigger value="budget" className="rounded-lg">Budget</TabsTrigger>
+          <TabsTrigger value="budget" className="rounded-lg">Categories</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 gap-6">
-            <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
+          <div className="space-y-6">
+            <Card className="border-0 rounded-2xl" style={{ backgroundColor: C.card }}>
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle style={{ color: '#3d3d2e' }}>Overview</CardTitle>
-                  <div className="flex space-x-2">
-                    {(["week", "month"] as const).map((tf) => (
-                      <Button key={tf} variant={financeTimeframe === tf ? "default" : "outline"} size="sm" className="rounded-lg" onClick={() => setFinanceTimeframe(tf)}>
+                  <CardTitle style={{ color: C.text }}>Spending Trends</CardTitle>
+                  <div className="flex gap-2">
+                    {(["week", "month"] as const).map(tf => (
+                      <button key={tf} onClick={() => setFinanceTimeframe(tf)}
+                        className="px-3 py-1 rounded-lg text-xs font-medium"
+                        style={{ backgroundColor: financeTimeframe === tf ? C.clay : C.bg, color: financeTimeframe === tf ? 'white' : C.muted }}>
                         {tf.charAt(0).toUpperCase() + tf.slice(1)}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {isLoadingWeekly || isLoadingMonthly ? (
-                  <Skeleton className="h-[300px] w-full" style={{ backgroundColor: '#d8d5c8' }} />
+                  <Skeleton className="h-[250px] w-full" style={{ backgroundColor: C.border }} />
                 ) : (
                   <FinanceChart data={currentTimeframeData || []} timeframe={financeTimeframe} onTimeframeChange={setFinanceTimeframe} />
                 )}
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
-                <CardHeader>
-                  <CardTitle style={{ color: '#3d3d2e' }}>Recent</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="space-y-3">
-                      {Array(5).fill(0).map((_, i) => (<Skeleton key={i} className="h-16 w-full" style={{ backgroundColor: '#d8d5c8' }} />))}
-                    </div>
-                  ) : (
-                    <div className="max-h-80 overflow-y-auto">
-                      <TransactionsList transactions={transactions.slice(0, 5)} showViewAll={false} />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
-                <CardHeader>
-                  <CardTitle style={{ color: '#3d3d2e' }}>By Category</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <Skeleton className="h-[200px] w-full" style={{ backgroundColor: '#d8d5c8' }} />
-                  ) : Object.keys(expensesByCategory).length === 0 ? (
-                    <div className="text-center py-12" style={{ color: '#8a8a72' }}>No expense data</div>
-                  ) : (
-                    <div className="space-y-4">
-                      {Object.entries(expensesByCategory).map(([category, amount]) => (
-                        <div key={category}>
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm font-medium" style={{ color: '#5a5a48' }}>{category.charAt(0).toUpperCase() + category.slice(1)}</span>
-                            <span className="text-sm font-medium" style={{ color: '#5a5a48' }}>${amount.toFixed(2)}</span>
-                          </div>
-                          <div className="w-full rounded-full h-2" style={{ backgroundColor: '#d8d5c8' }}>
-                            <div className="h-2 rounded-full" style={{ width: `${Math.min((amount / summary.expenses) * 100, 100)}%`, backgroundColor: '#c4a882' }}></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="border-0 rounded-2xl" style={{ backgroundColor: C.card }}>
+              <CardHeader><CardTitle style={{ color: C.text }}>Recent Transactions</CardTitle></CardHeader>
+              <CardContent>
+                <div className="max-h-64 overflow-y-auto">
+                  <TransactionsList transactions={transactions.slice(0, 5)} showViewAll={false} />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="transactions">
-          <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
+          <Card className="border-0 rounded-2xl" style={{ backgroundColor: C.card }}>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle style={{ color: '#3d3d2e' }}>All Transactions</CardTitle>
-                <Button onClick={handleAddTransaction} size="sm" className="rounded-lg text-white" style={{ backgroundColor: '#c4a882' }}>Add</Button>
+              <div className="flex justify-between items-center gap-3">
+                <CardTitle style={{ color: C.text }}>All Transactions</CardTitle>
+                <Button onClick={() => { setSelectedTransaction(null); setIsAddTransactionOpen(true); }} size="sm" className="rounded-lg text-white border-0" style={{ backgroundColor: C.clay }}>
+                  <Plus className="h-4 w-4 mr-1" /> Add
+                </Button>
               </div>
+              <input
+                placeholder="Search transactions..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full mt-2 px-3 py-2 rounded-xl text-sm border-0 outline-none"
+                style={{ backgroundColor: C.bg, color: C.text }}
+              />
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="space-y-3">{Array(10).fill(0).map((_, i) => (<Skeleton key={i} className="h-16 w-full" style={{ backgroundColor: '#d8d5c8' }} />))}</div>
-              ) : transactions.length === 0 ? (
-                <div className="text-center py-12" style={{ color: '#8a8a72' }}>
-                  <p>No transactions</p>
-                  <Button variant="outline" className="mt-2 rounded-xl" onClick={handleAddTransaction}>Add First Transaction</Button>
+                <div className="space-y-3">{Array(8).fill(0).map((_, i) => <Skeleton key={i} className="h-16 w-full" style={{ backgroundColor: C.border }} />)}</div>
+              ) : filteredTransactions.length === 0 ? (
+                <div className="text-center py-12" style={{ color: C.muted }}>
+                  <p>{searchQuery ? `No results for "${searchQuery}"` : 'No transactions'}</p>
+                  {!searchQuery && <Button variant="outline" className="mt-2 rounded-xl" onClick={() => { setSelectedTransaction(null); setIsAddTransactionOpen(true); }}>Add First Transaction</Button>}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {transactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center p-3 rounded-xl cursor-pointer transition-colors" style={{ backgroundColor: 'rgba(125, 155, 111, 0.06)' }} onClick={() => handleTransactionClick(transaction)}>
-                      <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: transaction.isIncome ? 'rgba(125, 155, 111, 0.15)' : 'rgba(196, 122, 90, 0.12)' }}>
-                        {transaction.isIncome ? <ArrowUpRight className="h-4 w-4" style={{ color: '#5a7a50' }} /> : <ArrowDownLeft className="h-4 w-4" style={{ color: '#c47a5a' }} />}
+                  {filteredTransactions.map(t => (
+                    <div key={t.id} className="flex items-center p-3 rounded-xl cursor-pointer transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: `${C.primary}08` }} onClick={() => handleTransactionClick(t)}>
+                      <div className="p-2 rounded-lg mr-3 flex-shrink-0" style={{ backgroundColor: t.isIncome ? `${C.income}20` : `${C.expense}15` }}>
+                        {t.isIncome ? <ArrowUpRight className="h-4 w-4" style={{ color: C.income }} /> : <ArrowDownLeft className="h-4 w-4" style={{ color: C.expense }} />}
                       </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium" style={{ color: '#3d3d2e' }}>{transaction.description}</h4>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium truncate" style={{ color: C.text }}>{t.description}</h4>
                         <div className="flex justify-between">
-                          <p className="text-xs" style={{ color: '#8a8a72' }}>{format(new Date(transaction.date), "PPp")}</p>
-                          <p className="text-xs" style={{ color: '#8a8a72' }}>{transaction.category}</p>
+                          <p className="text-xs" style={{ color: C.muted }}>{format(new Date(t.date), "MMM d, yyyy")}</p>
+                          <p className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: `${C.primary}15`, color: C.muted }}>{t.category}</p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold" style={{ color: transaction.isIncome ? '#5a7a50' : '#c47a5a' }}>
-                        {transaction.isIncome ? "+" : "-"}${transaction.amount.toFixed(2)}
+                      <span className="text-sm font-semibold ml-2 flex-shrink-0" style={{ color: t.isIncome ? C.income : C.expense }}>
+                        {t.isIncome ? "+" : "-"}${t.amount.toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -206,37 +227,98 @@ export default function Finance({ userId }: FinanceProps) {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="budget">
-          <Card className="border-0 rounded-2xl" style={{ backgroundColor: '#f0ede4' }}>
-            <CardHeader>
-              <CardTitle style={{ color: '#3d3d2e' }}>Budget Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (<Skeleton className="h-[400px] w-full" style={{ backgroundColor: '#d8d5c8' }} />) : (
-                <BudgetSummary income={summary.income} expenses={summary.expenses} expensesByCategory={expensesByCategory} budget={1500} />
-              )}
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card className="border-0 rounded-2xl" style={{ backgroundColor: C.card }}>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle style={{ color: C.text }}>Budget by Category</CardTitle>
+                  <Link href="/settings">
+                    <Button variant="outline" size="sm" className="rounded-lg border-0 text-xs" style={{ backgroundColor: C.bg, color: C.muted }}>Edit Limits</Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {budgetCategories.length === 0 ? (
+                    <div className="text-center py-8" style={{ color: C.muted }}>
+                      <p>No budget categories set</p>
+                      <Link href="/settings"><Button variant="outline" className="mt-2 rounded-xl text-sm" style={{ color: C.primary }}>Set Up Budget Categories</Button></Link>
+                    </div>
+                  ) : budgetCategories.map(cat => {
+                    const spent = expensesByCategory[cat.name] || 0;
+                    const pct = Math.min((spent / cat.limit) * 100, 100);
+                    const isOver = spent > cat.limit;
+                    return (
+                      <div key={cat.id}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium" style={{ color: C.text }}>{cat.name}</span>
+                          <span className="text-sm" style={{ color: isOver ? C.expense : C.muted }}>
+                            ${spent.toFixed(0)} / ${cat.limit}
+                            {isOver && <span className="ml-1 text-xs">⚠️ over</span>}
+                          </span>
+                        </div>
+                        <div className="w-full rounded-full h-2.5" style={{ backgroundColor: C.border }}>
+                          <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: isOver ? C.expense : cat.color || C.primary }} />
+                        </div>
+                        <div className="flex justify-between mt-0.5">
+                          <span className="text-xs" style={{ color: C.muted }}>{pct.toFixed(0)}% used</span>
+                          <span className="text-xs" style={{ color: isOver ? C.expense : C.muted }}>
+                            {isOver ? `$${(spent - cat.limit).toFixed(0)} over budget` : `$${(cat.limit - spent).toFixed(0)} left`}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Spending by category (all) */}
+            <Card className="border-0 rounded-2xl" style={{ backgroundColor: C.card }}>
+              <CardHeader><CardTitle style={{ color: C.text }}>All Spending This Month</CardTitle></CardHeader>
+              <CardContent>
+                {Object.keys(expensesByCategory).length === 0 ? (
+                  <div className="text-center py-8" style={{ color: C.muted }}>No expense data this month</div>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1]).map(([category, amount]) => (
+                      <div key={category}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm" style={{ color: C.text }}>{category}</span>
+                          <span className="text-sm font-medium" style={{ color: C.text }}>${amount.toFixed(2)}</span>
+                        </div>
+                        <div className="w-full rounded-full h-2" style={{ backgroundColor: C.border }}>
+                          <div className="h-2 rounded-full" style={{ width: `${Math.min((amount / summary.expenses) * 100, 100)}%`, backgroundColor: C.clay }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
       <Dialog open={isAddTransactionOpen} onOpenChange={setIsAddTransactionOpen}>
-        <DialogContent className="sm:max-w-[550px] rounded-2xl border-0" style={{ backgroundColor: '#f0ede4' }}>
-          <DialogHeader><DialogTitle style={{ color: '#3d3d2e' }}>Add Transaction</DialogTitle></DialogHeader>
-          <TransactionForm userId={userId} onSubmit={(data) => { createTransaction({ ...data, userId, date: new Date(data.date) }); setIsAddTransactionOpen(false); }} onCancel={() => setIsAddTransactionOpen(false)} />
+        <DialogContent className="sm:max-w-[500px] rounded-2xl border-0" style={{ backgroundColor: C.card }}>
+          <DialogHeader><DialogTitle style={{ color: C.text }}>Add Transaction</DialogTitle></DialogHeader>
+          <TransactionForm userId={userId}
+            onSubmit={(data) => { createTransaction({ ...data, userId, date: new Date(data.date) }); setIsAddTransactionOpen(false); }}
+            onCancel={() => setIsAddTransactionOpen(false)} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={isEditTransactionOpen} onOpenChange={setIsEditTransactionOpen}>
-        <DialogContent className="sm:max-w-[550px] rounded-2xl border-0" style={{ backgroundColor: '#f0ede4' }}>
-          <DialogHeader><DialogTitle style={{ color: '#3d3d2e' }}>Edit Transaction</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-[500px] rounded-2xl border-0" style={{ backgroundColor: C.card }}>
+          <DialogHeader><DialogTitle style={{ color: C.text }}>Edit Transaction</DialogTitle></DialogHeader>
           {selectedTransaction && (
             <TransactionForm userId={userId} transaction={selectedTransaction}
-              onSubmit={(data) => { if (selectedTransaction) { updateTransaction({ id: selectedTransaction.id, transaction: { ...data, date: new Date(data.date) } }); } setIsEditTransactionOpen(false); }}
+              onSubmit={(data) => { updateTransaction({ id: selectedTransaction.id, transaction: { ...data, date: new Date(data.date) } }); setIsEditTransactionOpen(false); }}
               onCancel={() => setIsEditTransactionOpen(false)}
-              onDelete={() => { if (selectedTransaction) handleDeleteTransaction(selectedTransaction.id); }}
-            />
+              onDelete={() => handleDeleteTransaction(selectedTransaction.id)} />
           )}
         </DialogContent>
       </Dialog>
