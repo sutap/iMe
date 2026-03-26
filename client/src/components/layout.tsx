@@ -6,6 +6,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 import { useQuery } from "@tanstack/react-query";
+import { useEvents } from "@/hooks/use-events";
+import { useEventReminders } from "@/hooks/use-event-reminders";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Settings, Bell, Search, X, Calendar, DollarSign, Lightbulb } from "lucide-react";
 import {
@@ -130,6 +132,37 @@ function GlobalSearch({ userId }: { userId: number }) {
   );
 }
 
+function NotificationBell({ userId }: { userId: number }) {
+  const { events } = useEvents(userId);
+  const [, navigate] = useLocation();
+
+  const now = new Date();
+  const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  // Upcoming events in the next 24 hours that have reminders set
+  const upcoming = (events || []).filter(e => {
+    const start = new Date(e.startTime);
+    return start > now && start <= next24h && e.reminder && e.reminder > 0;
+  });
+
+  return (
+    <button
+      onClick={() => navigate('/schedule')}
+      className="relative p-2 rounded-xl transition-colors"
+      style={{ color: C.muted }}
+      title={upcoming.length > 0 ? `${upcoming.length} upcoming event${upcoming.length !== 1 ? 's' : ''} with reminders` : 'Schedule'}
+    >
+      <Bell className="h-5 w-5" />
+      {upcoming.length > 0 && (
+        <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full text-[10px] font-bold text-white"
+          style={{ backgroundColor: '#c47a5a' }}>
+          {upcoming.length > 9 ? '9+' : upcoming.length}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function MobileUserInfo({ userId }: { userId: number }) {
   const { user, isLoading, logoutMutation } = useAuth();
   const [, navigate] = useLocation();
@@ -171,6 +204,9 @@ export default function Layout({ children }: LayoutProps) {
   const { isDark } = useDarkMode();
   const userId = user?.id || 1;
 
+  // Activate event reminders globally — schedules browser + in-app notifications
+  useEventReminders(userId);
+
   return (
     <div className="flex h-screen" style={{ backgroundColor: isDark ? '#1a1f1a' : C.bg }}>
       <Sidebar />
@@ -187,6 +223,7 @@ export default function Layout({ children }: LayoutProps) {
                 <h1 className="text-xl font-bold" style={{ color: isDark ? '#e8e8d0' : C.text }}>iMe</h1>
               </div>
               <div className="flex items-center space-x-1">
+                <NotificationBell userId={userId} />
                 <GlobalSearch userId={userId} />
                 <MobileUserInfo userId={userId} />
               </div>
