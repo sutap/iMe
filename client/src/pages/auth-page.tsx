@@ -51,6 +51,11 @@ export default function AuthPage() {
     defaultValues: { username: "", password: "" },
   });
 
+  const fillDemo = () => {
+    loginForm.setValue("username", "demo");
+    loginForm.setValue("password", "demo123");
+  };
+
   const registerForm = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { username: "", displayName: "", email: "", password: "", confirmPassword: "" },
@@ -90,6 +95,14 @@ export default function AuthPage() {
               </TabsList>
 
               <TabsContent value="login">
+                {/* Demo shortcut */}
+                <button type="button" onClick={fillDemo}
+                  className="w-full mb-4 p-3 rounded-xl text-sm font-medium text-left flex items-center justify-between transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: 'rgba(125,155,111,0.12)', border: '1px dashed #7d9b6f', color: '#5a7a50' }}>
+                  <span>✨ Try the demo account</span>
+                  <span className="text-xs font-normal opacity-70">demo / demo123 →</span>
+                </button>
+
                 <Form {...loginForm}>
                   <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                     <FormField control={loginForm.control} name="username" render={({ field }) => (
@@ -110,6 +123,11 @@ export default function AuthPage() {
                         <FormMessage />
                       </FormItem>
                     )} />
+                    {loginMutation.isError && (
+                      <p className="text-sm text-center rounded-xl p-2" style={{ backgroundColor: 'rgba(196,122,90,0.12)', color: '#c47a5a' }}>
+                        Invalid username or password. Try the demo account above.
+                      </p>
+                    )}
                     <Button
                       type="submit"
                       className="w-full rounded-xl text-white border-0 hover:opacity-90"
